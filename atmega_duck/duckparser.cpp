@@ -26,6 +26,9 @@ namespace duckparser {
     int defaultDelay = 5;
     int repeatNum    = 0;
     int stringDelay = 0;  // Delay in ms between characters in STRING (0 = fastest)
+    int stringDelayMin = 0;  // Min delay for STRING_DELAY_RANDOM
+    int stringDelayMax = 0;  // Max delay for STRING_DELAY_RANDOM
+    bool useRandomDelay = false;  // Flag to indicate if random delay mode is active
 
     unsigned long interpretTime  = 0;
     unsigned long sleepStartTime = 0;
@@ -40,9 +43,22 @@ namespace duckparser {
             i += advance;
 
             // Add delay only BETWEEN characters (not after the last one)
-            if (i < len && stringDelay > 0) {
-                sleep(stringDelay);
-                interpretTime = millis();
+            if (i < len) {
+                int delayTime = 0;
+                
+                // Use random delay if STRING_DELAY_RANDOM is active
+                if (useRandomDelay) {
+                    delayTime = random(stringDelayMin, stringDelayMax + 1);
+                }
+                // Otherwise use fixed STRING_DELAY
+                else if (stringDelay > 0) {
+                    delayTime = stringDelay;
+                }
+                
+                if (delayTime > 0) {
+                    sleep(delayTime);
+                    interpretTime = millis();
+                }
             }
         }
     }
@@ -253,6 +269,8 @@ namespace duckparser {
                 if (arg) {
                     stringDelay = toInt(arg->str, arg->len);
                     if (stringDelay < 0) stringDelay = 0;
+                    // Disable random delay when setting fixed delay
+                    useRandomDelay = false;
                 }
                 ignore_delay = true;
             }
@@ -264,6 +282,29 @@ namespace duckparser {
                 if (arg) {
                     stringDelay = toInt(arg->str, arg->len);
                     if (stringDelay < 0) stringDelay = 0;  // Prevent negative delays
+                    // Disable random delay when setting fixed delay
+                    useRandomDelay = false;
+                }
+                ignore_delay = true;
+            }
+
+            // STRING_DELAY_RANDOM (set random delay range between characters in STRING)
+            else if (compare(cmd->str, cmd->len, "STRING_DELAY_RANDOM", CASE_SENSETIVE)) {
+                word_node* arg1 = cmd->next;
+                word_node* arg2 = arg1 ? arg1->next : NULL;
+                
+                if (arg1 && arg2) {
+                    unsigned int minDelay = toInt(arg1->str, arg1->len);
+                    unsigned int maxDelay = toInt(arg2->str, arg2->len);
+                    
+                    // Validate arguments: max must be >= min
+                    if (maxDelay >= minDelay) {
+                        stringDelayMin = minDelay;
+                        stringDelayMax = maxDelay;
+                        useRandomDelay = true;
+                        // Disable fixed delay when setting random delay
+                        stringDelay = 0;
+                    }
                 }
                 ignore_delay = true;
             }

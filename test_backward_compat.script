@@ -1,0 +1,44 @@
+REM Backward compatibility test for STRING_DELAY and STRING_DELAY_RANDOM
+DEFAULTDELAY 100
+
+REM Test existing STRING_DELAY command (should still work)
+STRING_DELAY 50
+STRING Test 1: Fixed delay 50ms
+ENTER
+
+REM Test DEFAULT_STRING_DELAY command (should still work)
+DEFAULT_STRING_DELAY 30
+STRING Test 2: Default string delay 30ms
+ENTER
+
+REM Test switching from fixed to random
+STRING_DELAY 40
+STRING Test 3: Fixed 40ms
+ENTER
+STRING_DELAY_RANDOM 10 60
+STRING Test 4: Random 10-60ms (fixed should be disabled)
+ENTER
+
+REM Test switching from random to fixed
+STRING_DELAY 25
+STRING Test 5: Fixed 25ms (random should be disabled)
+ENTER
+
+REM Test edge cases
+STRING_DELAY_RANDOM 0 5
+STRING Test 6: Random 0-5ms (very fast)
+ENTER
+
+STRING_DELAY_RANDOM 100 100
+STRING Test 7: Random 100-100ms (effectively fixed)
+ENTER
+
+REM Test disabling delays
+STRING_DELAY 0
+STRING Test 8: No delay
+ENTER
+
+REM Test re-enabling random
+STRING_DELAY_RANDOM 15 45
+STRING Test 9: Random 15-45ms
+ENTER
