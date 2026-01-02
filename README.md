@@ -263,7 +263,19 @@ for example, `Sparkfun Pro Micro`.
 3. Connect the Atmega32u4 board via USB and select its port under `Tools` > `Port`.
 4. Optional: Under `Tools` you can enable the LED and set its pin.
 You can also change the USB ID to make it appear as a certain type of keyboard.
-5. Press Upload.
+5. **Optional - Enable Advanced Features:** To enable consumer/media keys and mouse support, add the following flags:
+   - In Arduino IDE, go to `Sketch` > `Show Sketch Folder`
+   - Create or edit a file named `build_opt.h` in the sketch folder
+   - Add these lines to enable the features:
+     ```cpp
+     // Enable consumer/media key support (MEDIA commands)
+     #define ENABLE_CONSUMER
+     
+     // Enable mouse support (MOUSEMOVE, MOUSESCROLL, mouse click commands)
+     #define ENABLE_MOUSE
+     ```
+   - Alternatively, you can add these defines at the top of `atmega_duck.ino` before the `#include` statements
+6. Press Upload.
 
 ### Flash ESP8266
 
@@ -327,6 +339,12 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `LOCALE` | `LOCALE DE` | Sets the keyboard layout. [List](#translate-keyboard-layout) |
 | `KEYCODE` | `KEYCODE 0x02 0x04` | Types a specific key code (modifier, key1[, ..., key6]) in decimal or hexadecimal |
 | `LED` | `LED 40 20 10` |Changes the color of the LED in decimal RGB values (0-255) |
+| `HOLD` | `HOLD CTRL` or `HOLD LEFTCLICK` | Press and hold key(s), modifier(s), or mouse button(s) without releasing |
+| `RELEASE` | `RELEASE CTRL` or `RELEASE LEFTCLICK` | Release specific key(s), modifier(s), or mouse button(s) |
+| `MEDIA` | `MEDIA VOLUME_UP` | Send consumer/media control key (requires `ENABLE_CONSUMER` flag) |
+| `GLOBE` | `GLOBE a` | Send Fn/Globe key with another key (requires `ENABLE_CONSUMER` flag) |
+| `MOUSEMOVE` | `MOUSEMOVE 10 20` | Move mouse cursor by dx, dy pixels (requires `ENABLE_MOUSE` flag) |
+| `MOUSESCROLL` | `MOUSESCROLL 5` | Scroll mouse wheel by distance (requires `ENABLE_MOUSE` flag) |
 
 ### Standard Keys
 
@@ -381,6 +399,62 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `NUM_MINUS` |
 | `NUM_DOT` |
 | `NUM_PLUS` |
+
+### Media Keys (Consumer Control)
+
+**Note:** Media key support requires compiling with the `ENABLE_CONSUMER` flag.
+
+| Command | Description |
+| ------- | ----------- |
+| `MEDIA VOLUME_UP` or `MEDIA VOLUMEUP` | Increase volume |
+| `MEDIA VOLUME_DOWN` or `MEDIA VOLUMEDOWN` | Decrease volume |
+| `MEDIA MUTE` | Toggle mute |
+| `MEDIA PLAY_PAUSE` or `MEDIA PLAYPAUSE` | Play/pause media |
+| `MEDIA NEXT_TRACK` or `MEDIA NEXT` | Next track |
+| `MEDIA PREV_TRACK` or `MEDIA PREVIOUS` | Previous track |
+| `MEDIA STOP` | Stop playback |
+| `MEDIA EJECT` | Eject media |
+| `MEDIA POWER` | Power key |
+| `MEDIA SLEEP` | Sleep key |
+
+### Mouse Control
+
+**Note:** Mouse support requires compiling with the `ENABLE_MOUSE` flag.
+
+| Command | Description |
+| ------- | ----------- |
+| `LEFTCLICK` or `LEFT_CLICK` | Click left mouse button |
+| `RIGHTCLICK` or `RIGHT_CLICK` | Click right mouse button |
+| `MIDDLECLICK` or `MIDDLE_CLICK` | Click middle mouse button |
+| `WHEELCLICK` or `WHEEL_CLICK` | Alias for middle click |
+| `MOUSEMOVE dx dy` | Move cursor by dx, dy pixels (-127 to 127 per step) |
+| `MOUSESCROLL distance` | Scroll wheel by distance (-127 to 127 per step) |
+| `HOLD LEFTCLICK` | Press and hold left button (for dragging) |
+| `RELEASE LEFTCLICK` | Release left button |
+
+### Advanced Commands
+
+#### HOLD and RELEASE
+
+The `HOLD` and `RELEASE` commands allow you to press keys or mouse buttons and hold them down without immediately releasing them. This is useful for:
+- Keyboard shortcuts that require holding modifiers
+- Drag-and-drop operations with the mouse
+- Gaming macros
+
+**Important Note:** Standard USB keyboards support 6-key rollover (NKRO). This means you can hold up to 6 regular keys simultaneously, plus modifiers (CTRL, SHIFT, ALT, GUI). Attempting to hold more than 6 regular keys may result in unpredictable behavior.
+
+Examples:
+```
+HOLD CTRL
+STRING a
+RELEASE CTRL
+```
+
+```
+HOLD LEFTCLICK
+MOUSEMOVE 100 0
+RELEASE LEFTCLICK
+```
 
 ### Examples
 

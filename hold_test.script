@@ -1,0 +1,22 @@
+REM Test HOLD and RELEASE commands
+REM This script tests holding CTRL while typing
+
+DELAY 1000
+REM Open run dialog (Windows example)
+GUI r
+DELAY 500
+
+REM Hold CTRL and type "notepad" - CTRL should remain pressed
+HOLD CTRL
+STRING notepad
+RELEASE CTRL
+ENTER
+
+DELAY 1000
+REM Test holding SHIFT
+HOLD SHIFT
+STRING hello world
+RELEASE SHIFT
+ENTER
+
+REM The above should type "HELLO WORLD" in all caps

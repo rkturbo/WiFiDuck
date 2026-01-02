@@ -1,0 +1,28 @@
+REM Test mouse click commands
+REM This script tests mouse button clicks
+REM Note: Requires ENABLE_MOUSE flag during compilation
+
+DELAY 1000
+
+REM Left click
+LEFTCLICK
+DELAY 500
+
+REM Right click (opens context menu)
+RIGHTCLICK
+DELAY 1000
+ESC
+DELAY 500
+
+REM Middle click (may open new tab in browser)
+MIDDLECLICK
+DELAY 500
+
+REM Alternative syntax
+LEFT_CLICK
+DELAY 500
+RIGHT_CLICK
+DELAY 1000
+ESC
+DELAY 500
+MIDDLE_CLICK

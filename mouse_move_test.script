@@ -1,0 +1,32 @@
+REM Test MOUSEMOVE command
+REM This script tests mouse cursor movement
+REM Note: Requires ENABLE_MOUSE flag during compilation
+
+DELAY 1000
+
+REM Move cursor right
+MOUSEMOVE 30 0
+DELAY 500
+
+REM Move cursor down
+MOUSEMOVE 0 30
+DELAY 500
+
+REM Move cursor left
+MOUSEMOVE -30 0
+DELAY 500
+
+REM Move cursor up
+MOUSEMOVE 0 -30
+DELAY 500
+
+REM Diagonal movement
+MOUSEMOVE 50 50
+DELAY 500
+MOUSEMOVE -50 -50
+DELAY 500
+
+REM Large movement (chunked automatically)
+MOUSEMOVE 200 0
+DELAY 500
+MOUSEMOVE -200 0

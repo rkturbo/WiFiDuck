@@ -1,0 +1,31 @@
+REM Test MEDIA commands
+REM This script tests consumer/media key functionality
+REM Note: Requires ENABLE_CONSUMER flag during compilation
+
+DELAY 1000
+
+REM Test volume control
+MEDIA VOLUME_DOWN
+DELAY 500
+MEDIA VOLUME_DOWN
+DELAY 500
+MEDIA VOLUME_UP
+DELAY 500
+MEDIA VOLUME_UP
+DELAY 500
+
+REM Test mute toggle
+MEDIA MUTE
+DELAY 1000
+MEDIA MUTE
+DELAY 500
+
+REM Test media playback controls
+REM (These may require a media player to be open)
+MEDIA PLAY_PAUSE
+DELAY 1000
+MEDIA NEXT_TRACK
+DELAY 500
+MEDIA PREV_TRACK
+DELAY 500
+MEDIA STOP

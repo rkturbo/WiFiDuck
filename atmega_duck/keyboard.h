@@ -26,9 +26,16 @@ namespace keyboard {
 
     void pressKey(uint8_t key, uint8_t modifiers = KEY_NONE);
     void pressModifier(uint8_t key);
+    void releaseKey(uint8_t key);
+    void releaseModifier(uint8_t modifier);
 
     uint8_t press(const char* strPtr);
 
     uint8_t write(const char* c);
     void write(const char* str, size_t len);
+
+#ifdef ENABLE_CONSUMER
+    void sendConsumer(uint16_t usage);
+    void consumerClick(uint16_t usage);
+#endif
 }

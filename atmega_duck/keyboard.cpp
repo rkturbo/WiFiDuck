@@ -6,6 +6,14 @@
 #include "keyboard.h"
 #include "debug.h"
 
+#ifdef ENABLE_CONSUMER
+#include "consumer_usages.h"
+#endif
+
+#ifdef ENABLE_MOUSE
+#include "mouse.h"
+#endif
+
 namespace keyboard {
     // ====== PRIVATE ====== //
     hid_locale_t* locale      { &locale_us };
@@ -43,6 +51,24 @@ namespace keyboard {
         0xc0,       //   END_COLLECTION
     };
 
+#ifdef ENABLE_CONSUMER
+    const uint8_t consumerDescriptor[] PROGMEM {
+        // Consumer Control
+        0x05, 0x0C,        // Usage Page (Consumer)
+        0x09, 0x01,        // Usage (Consumer Control)
+        0xA1, 0x01,        // Collection (Application)
+        0x85, 0x03,        //   Report ID (3)
+        0x19, 0x00,        //   Usage Minimum (0)
+        0x2A, 0x3C, 0x02,  //   Usage Maximum (0x023C)
+        0x15, 0x00,        //   Logical Minimum (0)
+        0x26, 0x3C, 0x02,  //   Logical Maximum (0x023C)
+        0x75, 0x10,        //   Report Size (16)
+        0x95, 0x01,        //   Report Count (1)
+        0x81, 0x00,        //   Input (Data,Array,Abs)
+        0xC0               // End Collection
+    };
+#endif
+
     report makeReport(uint8_t modifiers = 0, uint8_t key1 = 0, uint8_t key2 = 0, uint8_t key3 = 0, uint8_t key4 = 0, uint8_t key5 = 0, uint8_t key6 = 0);
 
     report makeReport(uint8_t modifiers, uint8_t key1, uint8_t key2, uint8_t key3, uint8_t key4, uint8_t key5, uint8_t key6) {
@@ -67,6 +93,15 @@ namespace keyboard {
         static HIDSubDescriptor node(keyboardDescriptor, sizeof(keyboardDescriptor));
 
         HID().AppendDescriptor(&node);
+
+#ifdef ENABLE_CONSUMER
+        static HIDSubDescriptor consumerNode(consumerDescriptor, sizeof(consumerDescriptor));
+        HID().AppendDescriptor(&consumerNode);
+#endif
+
+#ifdef ENABLE_MOUSE
+        mouse::mouse_begin();
+#endif
     }
 
     void setLocale(hid_locale_t* locale) {
@@ -210,4 +245,52 @@ namespace keyboard {
             i += write(&str[i]);
         }
     }
+
+    void releaseKey(uint8_t key) {
+        bool changed = false;
+        
+        // Find and remove the key from the report
+        for (uint8_t i = 0; i < 6; ++i) {
+            if (prev_report.keys[i] == key) {
+                // Shift remaining keys down to compact the array
+                for (uint8_t j = i; j < 5; ++j) {
+                    prev_report.keys[j] = prev_report.keys[j + 1];
+                }
+                prev_report.keys[5] = KEY_NONE;
+                changed = true;
+                break;
+            }
+        }
+        
+        // Only send report if we actually removed a key
+        if (changed) {
+            send(&prev_report);
+        }
+    }
+
+    void releaseModifier(uint8_t modifier) {
+        uint8_t old_modifiers = prev_report.modifiers;
+        prev_report.modifiers &= ~modifier;
+        
+        // Only send report if modifiers actually changed
+        if (old_modifiers != prev_report.modifiers) {
+            send(&prev_report);
+        }
+    }
+
+#ifdef ENABLE_CONSUMER
+    void sendConsumer(uint16_t usage) {
+        uint8_t report[2];
+        report[0] = usage & 0xFF;         // Low byte
+        report[1] = (usage >> 8) & 0xFF;  // High byte
+        
+        HID().SendReport(3, report, 2);
+    }
+
+    void consumerClick(uint16_t usage) {
+        sendConsumer(usage);
+        // Send a release report (0x0000)
+        sendConsumer(0x0000);
+    }
+#endif
 }

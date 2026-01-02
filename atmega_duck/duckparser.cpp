@@ -11,6 +11,14 @@
 #include "keyboard.h"
 #include "led.h"
 
+#ifdef ENABLE_CONSUMER
+#include "consumer_usages.h"
+#endif
+
+#ifdef ENABLE_MOUSE
+#include "mouse.h"
+#endif
+
 extern "C" {
  #include "parser.h" // parse_lines
 }
@@ -35,6 +43,47 @@ namespace duckparser {
     unsigned long sleepTime      = 0;
 
     void sleep(unsigned long time);
+
+    // Helper function to check if a token is a modifier key
+    bool isModifier(const char* str, size_t len, uint8_t* modifier) {
+        if (compare(str, len, "CTRL", CASE_SENSETIVE) || compare(str, len, "CONTROL", CASE_SENSETIVE)) {
+            *modifier = KEY_MOD_LCTRL;
+            return true;
+        }
+        if (compare(str, len, "SHIFT", CASE_SENSETIVE)) {
+            *modifier = KEY_MOD_LSHIFT;
+            return true;
+        }
+        if (compare(str, len, "ALT", CASE_SENSETIVE)) {
+            *modifier = KEY_MOD_LALT;
+            return true;
+        }
+        if (compare(str, len, "WINDOWS", CASE_SENSETIVE) || compare(str, len, "GUI", CASE_SENSETIVE)) {
+            *modifier = KEY_MOD_LMETA;
+            return true;
+        }
+        return false;
+    }
+
+#ifdef ENABLE_MOUSE
+    // Helper function to check if a token is a mouse button
+    bool isMouseButton(const char* str, size_t len, uint8_t* button) {
+        if (compare(str, len, "LEFTCLICK", CASE_SENSETIVE) || compare(str, len, "LEFT_CLICK", CASE_SENSETIVE)) {
+            *button = MOUSE_LEFT;
+            return true;
+        }
+        if (compare(str, len, "RIGHTCLICK", CASE_SENSETIVE) || compare(str, len, "RIGHT_CLICK", CASE_SENSETIVE)) {
+            *button = MOUSE_RIGHT;
+            return true;
+        }
+        if (compare(str, len, "MIDDLECLICK", CASE_SENSETIVE) || compare(str, len, "MIDDLE_CLICK", CASE_SENSETIVE) ||
+            compare(str, len, "WHEELCLICK", CASE_SENSETIVE) || compare(str, len, "WHEEL_CLICK", CASE_SENSETIVE)) {
+            *button = MOUSE_MIDDLE;
+            return true;
+        }
+        return false;
+    }
+#endif
 
     void type(const char* str, size_t len) {
         for (size_t i = 0; i < len; ) {
@@ -124,6 +173,14 @@ namespace duckparser {
         else if (compare(str, len, "SHIFT", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LSHIFT);
         else if (compare(str, len, "ALT", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LALT);
         else if (compare(str, len, "WINDOWS", CASE_SENSETIVE) || compare(str, len, "GUI", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LMETA);
+
+#ifdef ENABLE_MOUSE
+        // Mouse buttons - immediate click
+        else if (compare(str, len, "LEFTCLICK", CASE_SENSETIVE) || compare(str, len, "LEFT_CLICK", CASE_SENSETIVE)) mouse::mouse_click(MOUSE_LEFT);
+        else if (compare(str, len, "RIGHTCLICK", CASE_SENSETIVE) || compare(str, len, "RIGHT_CLICK", CASE_SENSETIVE)) mouse::mouse_click(MOUSE_RIGHT);
+        else if (compare(str, len, "MIDDLECLICK", CASE_SENSETIVE) || compare(str, len, "MIDDLE_CLICK", CASE_SENSETIVE) ||
+                 compare(str, len, "WHEELCLICK", CASE_SENSETIVE) || compare(str, len, "WHEEL_CLICK", CASE_SENSETIVE)) mouse::mouse_click(MOUSE_MIDDLE);
+#endif
 
         // Utf8 character
         else keyboard::press(str);
@@ -367,6 +424,215 @@ namespace duckparser {
                     keyboard::release();
                 }
             }
+
+            // HOLD (-> press and hold keys/modifiers/mouse buttons without releasing)
+            else if (compare(cmd->str, cmd->len, "HOLD", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                while (w) {
+                    uint8_t modifier = 0;
+                    if (isModifier(w->str, w->len, &modifier)) {
+                        keyboard::pressModifier(modifier);
+                    }
+#ifdef ENABLE_MOUSE
+                    else {
+                        uint8_t button = 0;
+                        if (isMouseButton(w->str, w->len, &button)) {
+                            mouse::mouse_press(button);
+                        } else {
+                            // Regular key - use press without release
+                            press(w->str, w->len);
+                        }
+                    }
+#else
+                    else {
+                        // Regular key - use press without release
+                        press(w->str, w->len);
+                    }
+#endif
+                    w = w->next;
+                }
+            }
+
+            // RELEASE (-> release specific keys/modifiers/mouse buttons)
+            else if (compare(cmd->str, cmd->len, "RELEASE", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                while (w) {
+                    uint8_t modifier = 0;
+                    if (isModifier(w->str, w->len, &modifier)) {
+                        keyboard::releaseModifier(modifier);
+                    }
+#ifdef ENABLE_MOUSE
+                    else {
+                        uint8_t button = 0;
+                        if (isMouseButton(w->str, w->len, &button)) {
+                            mouse::mouse_release(button);
+                        } else {
+                            // Try to release as a regular key
+                            // We need to map the token back to a key code
+                            // For simplicity, handle common cases
+                            if (w->len == 1) {
+                                keyboard::releaseKey(keyboard::press(w->str));
+                            } else if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
+                            else if (compare(w->str, w->len, "SPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_SPACE);
+                            else if (compare(w->str, w->len, "TAB", CASE_SENSETIVE)) keyboard::releaseKey(KEY_TAB);
+                            else if (compare(w->str, w->len, "ESC", CASE_SENSETIVE) || compare(w->str, w->len, "ESCAPE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ESC);
+                            // Add more common keys as needed
+                        }
+                    }
+#else
+                    else {
+                        // Try to release as a regular key
+                        if (w->len == 1) {
+                            // For single character, we need to get its key code - this is tricky
+                            // For now, just release all keys
+                            keyboard::release();
+                        } else if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
+                        else if (compare(w->str, w->len, "SPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_SPACE);
+                        else if (compare(w->str, w->len, "TAB", CASE_SENSETIVE)) keyboard::releaseKey(KEY_TAB);
+                        else if (compare(w->str, w->len, "ESC", CASE_SENSETIVE) || compare(w->str, w->len, "ESCAPE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ESC);
+                        // Add more common keys as needed
+                    }
+#endif
+                    w = w->next;
+                }
+            }
+
+#ifdef ENABLE_CONSUMER
+            // MEDIA (-> send consumer key)
+            else if (compare(cmd->str, cmd->len, "MEDIA", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                if (w) {
+                    uint16_t usage = 0;
+                    
+                    // Map media key names to consumer usages
+                    if (compare(w->str, w->len, "VOLUME_UP", CASE_SENSETIVE) || compare(w->str, w->len, "VOLUMEUP", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_VOLUME_UP;
+                    } else if (compare(w->str, w->len, "VOLUME_DOWN", CASE_SENSETIVE) || compare(w->str, w->len, "VOLUMEDOWN", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_VOLUME_DOWN;
+                    } else if (compare(w->str, w->len, "MUTE", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_MUTE;
+                    } else if (compare(w->str, w->len, "PLAY_PAUSE", CASE_SENSETIVE) || compare(w->str, w->len, "PLAYPAUSE", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_PLAY_PAUSE;
+                    } else if (compare(w->str, w->len, "NEXT_TRACK", CASE_SENSETIVE) || compare(w->str, w->len, "NEXTTRACK", CASE_SENSETIVE) || compare(w->str, w->len, "NEXT", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_NEXT_TRACK;
+                    } else if (compare(w->str, w->len, "PREV_TRACK", CASE_SENSETIVE) || compare(w->str, w->len, "PREVTRACK", CASE_SENSETIVE) || compare(w->str, w->len, "PREVIOUS", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_PREV_TRACK;
+                    } else if (compare(w->str, w->len, "STOP", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_STOP;
+                    } else if (compare(w->str, w->len, "EJECT", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_EJECT;
+                    } else if (compare(w->str, w->len, "POWER", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_POWER;
+                    } else if (compare(w->str, w->len, "SLEEP", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_SLEEP;
+                    } else if (compare(w->str, w->len, "REBOOT", CASE_SENSETIVE)) {
+                        usage = HID_CONSUMER_REBOOT;
+                    }
+                    
+                    if (usage != 0) {
+                        keyboard::consumerClick(usage);
+                    }
+                }
+            }
+
+            // GLOBE (-> send consumer FN_GLOBE and then press a key)
+            else if (compare(cmd->str, cmd->len, "GLOBE", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                if (w && HID_CONSUMER_FN_GLOBE != 0) {
+                    // Send globe key
+                    keyboard::sendConsumer(HID_CONSUMER_FN_GLOBE);
+                    sleep(10);  // Small delay
+                    
+                    // Press the actual key
+                    press(w->str, w->len);
+                    release();
+                    
+                    // Release globe key
+                    keyboard::sendConsumer(0x0000);
+                }
+            }
+#endif
+
+#ifdef ENABLE_MOUSE
+            // MOUSEMOVE (-> move mouse cursor)
+            else if (compare(cmd->str, cmd->len, "MOUSEMOVE", CASE_SENSETIVE) || compare(cmd->str, cmd->len, "MOUSE_MOVE", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                if (w) {
+                    int dx = (int)toInt(w->str, w->len);
+                    w = w->next;
+                    
+                    if (w) {
+                        int dy = (int)toInt(w->str, w->len);
+                        
+                        // Chunk large movements into multiple int8 steps
+                        while (dx != 0 || dy != 0) {
+                            int8_t step_x = 0;
+                            int8_t step_y = 0;
+                            
+                            if (dx > 127) {
+                                step_x = 127;
+                                dx -= 127;
+                            } else if (dx < -127) {
+                                step_x = -127;
+                                dx += 127;
+                            } else {
+                                step_x = (int8_t)dx;
+                                dx = 0;
+                            }
+                            
+                            if (dy > 127) {
+                                step_y = 127;
+                                dy -= 127;
+                            } else if (dy < -127) {
+                                step_y = -127;
+                                dy += 127;
+                            } else {
+                                step_y = (int8_t)dy;
+                                dy = 0;
+                            }
+                            
+                            mouse::mouse_move(step_x, step_y);
+                        }
+                    }
+                }
+                
+                ignore_delay = true;
+            }
+
+            // MOUSESCROLL (-> scroll mouse wheel)
+            else if (compare(cmd->str, cmd->len, "MOUSESCROLL", CASE_SENSETIVE) || compare(cmd->str, cmd->len, "MOUSE_SCROLL", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                
+                if (w) {
+                    int distance = (int)toInt(w->str, w->len);
+                    
+                    // Chunk large scrolls into multiple int8 steps
+                    while (distance != 0) {
+                        int8_t step = 0;
+                        
+                        if (distance > 127) {
+                            step = 127;
+                            distance -= 127;
+                        } else if (distance < -127) {
+                            step = -127;
+                            distance += 127;
+                        } else {
+                            step = (int8_t)distance;
+                            distance = 0;
+                        }
+                        
+                        mouse::mouse_scroll(step);
+                    }
+                }
+                
+                ignore_delay = true;
+            }
+#endif
 
             // Otherwise go through words and look for keys to press
             else {

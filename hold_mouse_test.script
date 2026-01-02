@@ -1,0 +1,24 @@
+REM Test HOLD and RELEASE with mouse buttons
+REM This script tests holding mouse buttons down and releasing them
+REM Note: Requires ENABLE_MOUSE flag during compilation
+
+DELAY 1000
+
+REM Hold left mouse button, move, then release (drag operation)
+HOLD LEFTCLICK
+DELAY 100
+MOUSEMOVE 50 50
+DELAY 100
+MOUSEMOVE 50 0
+DELAY 100
+RELEASE LEFTCLICK
+DELAY 1000
+
+REM Test holding multiple buttons
+HOLD LEFTCLICK
+DELAY 200
+HOLD RIGHTCLICK
+DELAY 200
+RELEASE LEFTCLICK
+DELAY 200
+RELEASE RIGHTCLICK
