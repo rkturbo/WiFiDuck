@@ -1,0 +1,37 @@
+REM Test script for STRING_DELAY_RANDOM command
+DEFAULTDELAY 200
+
+REM Test 1: Basic random delay with range 10-50ms
+STRING_DELAY_RANDOM 10 50
+STRING This text should have random delays between 10-50ms per character
+ENTER
+
+REM Test 2: Wider range 50-200ms
+STRING_DELAY_RANDOM 50 200
+STRING Wider delay range
+ENTER
+
+REM Test 3: Same min and max (should behave like fixed delay)
+STRING_DELAY_RANDOM 100 100
+STRING Fixed 100ms delay
+ENTER
+
+REM Test 4: Minimum range (0-10ms)
+STRING_DELAY_RANDOM 0 10
+STRING Very fast with slight randomness
+ENTER
+
+REM Test 5: Switch back to fixed STRING_DELAY
+STRING_DELAY 25
+STRING Back to fixed 25ms delay
+ENTER
+
+REM Test 6: Switch back to random delay
+STRING_DELAY_RANDOM 20 80
+STRING Random again 20-80ms
+ENTER
+
+REM Test 7: Disable all delays
+STRING_DELAY 0
+STRING No delays at all
+ENTER

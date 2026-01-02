@@ -15,6 +15,9 @@
 // ===== SETUP ====== //
 void setup() {
     debug_init();
+    
+    // Initialize random seed for STRING_DELAY_RANDOM
+    randomSeed(analogRead(0));
 
     led::begin();
     serial_bridge::begin();

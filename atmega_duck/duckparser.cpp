@@ -26,6 +26,8 @@ namespace duckparser {
     int defaultDelay = 5;
     int repeatNum    = 0;
     int stringDelay = 0;  // Delay in ms between characters in STRING (0 = fastest)
+    int stringDelayMin = 0;  // Min delay for STRING_DELAY_RANDOM (0 = disabled)
+    int stringDelayMax = 0;  // Max delay for STRING_DELAY_RANDOM
 
     unsigned long interpretTime  = 0;
     unsigned long sleepStartTime = 0;
@@ -40,9 +42,22 @@ namespace duckparser {
             i += advance;
 
             // Add delay only BETWEEN characters (not after the last one)
-            if (i < len && stringDelay > 0) {
-                sleep(stringDelay);
-                interpretTime = millis();
+            if (i < len) {
+                int delayTime = 0;
+                
+                // Use random delay if STRING_DELAY_RANDOM is set (min > 0)
+                if (stringDelayMin > 0) {
+                    delayTime = random(stringDelayMin, stringDelayMax + 1);
+                }
+                // Otherwise use fixed STRING_DELAY
+                else if (stringDelay > 0) {
+                    delayTime = stringDelay;
+                }
+                
+                if (delayTime > 0) {
+                    sleep(delayTime);
+                    interpretTime = millis();
+                }
             }
         }
     }
@@ -264,6 +279,29 @@ namespace duckparser {
                 if (arg) {
                     stringDelay = toInt(arg->str, arg->len);
                     if (stringDelay < 0) stringDelay = 0;  // Prevent negative delays
+                    // Disable random delay when setting fixed delay
+                    stringDelayMin = 0;
+                    stringDelayMax = 0;
+                }
+                ignore_delay = true;
+            }
+
+            // STRING_DELAY_RANDOM (set random delay range between characters in STRING)
+            else if (compare(cmd->str, cmd->len, "STRING_DELAY_RANDOM", CASE_SENSETIVE)) {
+                word_node* arg1 = cmd->next;
+                word_node* arg2 = arg1 ? arg1->next : NULL;
+                
+                if (arg1 && arg2) {
+                    int minDelay = toInt(arg1->str, arg1->len);
+                    int maxDelay = toInt(arg2->str, arg2->len);
+                    
+                    // Validate arguments: min must be >= 0, max must be >= min
+                    if (minDelay >= 0 && maxDelay >= minDelay) {
+                        stringDelayMin = minDelay;
+                        stringDelayMax = maxDelay;
+                        // Disable fixed delay when setting random delay
+                        stringDelay = 0;
+                    }
                 }
                 ignore_delay = true;
             }
