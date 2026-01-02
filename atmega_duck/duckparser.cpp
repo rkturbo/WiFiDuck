@@ -294,11 +294,11 @@ namespace duckparser {
                 word_node* arg2 = arg1 ? arg1->next : NULL;
                 
                 if (arg1 && arg2) {
-                    int minDelay = toInt(arg1->str, arg1->len);
-                    int maxDelay = toInt(arg2->str, arg2->len);
+                    unsigned int minDelay = toInt(arg1->str, arg1->len);
+                    unsigned int maxDelay = toInt(arg2->str, arg2->len);
                     
-                    // Validate arguments: min must be >= 0, max must be >= min
-                    if (minDelay >= 0 && maxDelay >= minDelay) {
+                    // Validate arguments: max must be >= min
+                    if (maxDelay >= minDelay) {
                         stringDelayMin = minDelay;
                         stringDelayMax = maxDelay;
                         useRandomDelay = true;
