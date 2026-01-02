@@ -42,3 +42,4 @@ save-commands.json
 *.hex
 
 *.uf2
+_codeql_detected_source_root
