@@ -327,6 +327,10 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `LOCALE` | `LOCALE DE` | Sets the keyboard layout. [List](#translate-keyboard-layout) |
 | `KEYCODE` | `KEYCODE 0x02 0x04` | Types a specific key code (modifier, key1[, ..., key6]) in decimal or hexadecimal |
 | `LED` | `LED 40 20 10` |Changes the color of the LED in decimal RGB values (0-255) |
+| `HOLD` | `HOLD SHIFT` | Press and hold key(s) without releasing (useful for multi-line combinations) |
+| `RELEASE` | `RELEASE` | Release all currently held keys |
+| `MEDIA` | `MEDIA VOLUMEUP` | Send a media/consumer control key (see [Media Keys](#media-keys)) |
+| `GLOBE` | `GLOBE` | Press the Globe/Fn key (Compose key on some systems) |
 
 ### Standard Keys
 
@@ -382,6 +386,31 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `NUM_DOT` |
 | `NUM_PLUS` |
 
+### Media Keys
+
+Media keys are used with the `MEDIA` command to control media playback and system functions.
+
+| Key | Description |
+| --- | ----------- |
+| `PLAYPAUSE` or `PLAY` | Play/Pause media |
+| `STOP` | Stop media playback |
+| `NEXT` or `NEXTSONG` | Next track |
+| `PREV`, `PREVIOUS`, or `PREVIOUSSONG` | Previous track |
+| `VOLUMEUP` or `VOL_UP` | Increase volume |
+| `VOLUMEDOWN` or `VOL_DOWN` | Decrease volume |
+| `MUTE` | Mute/unmute audio |
+| `EJECT` | Eject media |
+| `BROWSER` or `WWW` | Open web browser |
+| `BACK` | Browser back |
+| `FORWARD` | Browser forward |
+| `REFRESH` | Browser refresh |
+| `SEARCH` | Browser search |
+| `FAVORITES` | Browser favorites |
+| `CALC` or `CALCULATOR` | Open calculator |
+| `MYCOMPUTER` | Open My Computer |
+| `EMAIL` | Open email client |
+| `SLEEP` | Put system to sleep |
+
 ### Examples
 
 ```
@@ -391,6 +420,33 @@ GUI r
 STRING notepad
 ENTER
 STRING Hello World!
+```
+
+```
+REM Example using HOLD and RELEASE
+REM Type "HELLO" with shift held
+HOLD SHIFT
+STRING hello
+RELEASE
+```
+
+```
+REM Example using MEDIA keys
+REM Control media playback
+MEDIA VOLUMEUP
+DELAY 500
+MEDIA PLAYPAUSE
+DELAY 2000
+MEDIA STOP
+```
+
+```
+REM Example combining HOLD with multiple modifiers
+REM Open incognito window in Chrome (Ctrl+Shift+N)
+HOLD CTRL
+HOLD SHIFT
+STRING n
+RELEASE
 ```
 
 ## CLI Commands
