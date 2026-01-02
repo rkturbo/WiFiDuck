@@ -368,6 +368,80 @@ namespace duckparser {
                 }
             }
 
+            // HOLD (-> press keys without releasing)
+            else if (compare(cmd->str, cmd->len, "HOLD", CASE_SENSETIVE)) {
+                word_node* w = wl->first->next;
+
+                while (w) {
+                    press(w->str, w->len);
+                    w = w->next;
+                }
+            }
+
+            // RELEASE (-> explicitly release all keys)
+            else if (compare(cmd->str, cmd->len, "RELEASE", CASE_SENSETIVE)) {
+                release();
+            }
+
+            // MEDIA (-> send consumer/media key)
+            else if (compare(cmd->str, cmd->len, "MEDIA", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+                if (w) {
+                    uint16_t mediaKey = 0;
+
+                    // Map common media key names to consumer usage codes
+                    if (compare(w->str, w->len, "PLAYPAUSE", CASE_SENSETIVE) || compare(w->str, w->len, "PLAY", CASE_SENSETIVE)) {
+                        mediaKey = 0xCD; // Play/Pause
+                    } else if (compare(w->str, w->len, "STOP", CASE_SENSETIVE)) {
+                        mediaKey = 0xB7; // Stop
+                    } else if (compare(w->str, w->len, "NEXT", CASE_SENSETIVE) || compare(w->str, w->len, "NEXTSONG", CASE_SENSETIVE)) {
+                        mediaKey = 0xB5; // Next Track
+                    } else if (compare(w->str, w->len, "PREV", CASE_SENSETIVE) || compare(w->str, w->len, "PREVIOUS", CASE_SENSETIVE) || compare(w->str, w->len, "PREVIOUSSONG", CASE_SENSETIVE)) {
+                        mediaKey = 0xB6; // Previous Track
+                    } else if (compare(w->str, w->len, "VOLUMEUP", CASE_SENSETIVE) || compare(w->str, w->len, "VOL_UP", CASE_SENSETIVE)) {
+                        mediaKey = 0xE9; // Volume Up
+                    } else if (compare(w->str, w->len, "VOLUMEDOWN", CASE_SENSETIVE) || compare(w->str, w->len, "VOL_DOWN", CASE_SENSETIVE)) {
+                        mediaKey = 0xEA; // Volume Down
+                    } else if (compare(w->str, w->len, "MUTE", CASE_SENSETIVE)) {
+                        mediaKey = 0xE2; // Mute
+                    } else if (compare(w->str, w->len, "EJECT", CASE_SENSETIVE)) {
+                        mediaKey = 0xB8; // Eject
+                    } else if (compare(w->str, w->len, "BROWSER", CASE_SENSETIVE) || compare(w->str, w->len, "WWW", CASE_SENSETIVE)) {
+                        mediaKey = 0x196; // Browser Home
+                    } else if (compare(w->str, w->len, "BACK", CASE_SENSETIVE)) {
+                        mediaKey = 0x224; // Browser Back
+                    } else if (compare(w->str, w->len, "FORWARD", CASE_SENSETIVE)) {
+                        mediaKey = 0x225; // Browser Forward
+                    } else if (compare(w->str, w->len, "REFRESH", CASE_SENSETIVE)) {
+                        mediaKey = 0x227; // Browser Refresh
+                    } else if (compare(w->str, w->len, "SEARCH", CASE_SENSETIVE)) {
+                        mediaKey = 0x221; // Browser Search
+                    } else if (compare(w->str, w->len, "FAVORITES", CASE_SENSETIVE)) {
+                        mediaKey = 0x22A; // Browser Favorites
+                    } else if (compare(w->str, w->len, "CALC", CASE_SENSETIVE) || compare(w->str, w->len, "CALCULATOR", CASE_SENSETIVE)) {
+                        mediaKey = 0x192; // Calculator
+                    } else if (compare(w->str, w->len, "MYCOMPUTER", CASE_SENSETIVE)) {
+                        mediaKey = 0x194; // My Computer
+                    } else if (compare(w->str, w->len, "EMAIL", CASE_SENSETIVE)) {
+                        mediaKey = 0x18A; // Email
+                    } else if (compare(w->str, w->len, "SLEEP", CASE_SENSETIVE)) {
+                        mediaKey = 0x82; // Sleep
+                    }
+
+                    if (mediaKey != 0) {
+                        keyboard::sendConsumer(mediaKey);
+                        keyboard::releaseConsumer();
+                    }
+                }
+            }
+
+            // GLOBE (-> send Globe/Fn key)
+            else if (compare(cmd->str, cmd->len, "GLOBE", CASE_SENSETIVE)) {
+                // Globe key is typically the Compose key (0x65) on some systems
+                keyboard::pressKey(KEY_COMPOSE);
+                keyboard::release();
+            }
+
             // Otherwise go through words and look for keys to press
             else {
                 word_node* w = wl->first;

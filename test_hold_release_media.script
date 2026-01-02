@@ -1,0 +1,40 @@
+REM Test script for HOLD, RELEASE, MEDIA, and GLOBE commands
+DEFAULTDELAY 200
+
+REM Test HOLD and RELEASE with modifiers
+REM This should type "HELLO" (shift held for all characters)
+HOLD SHIFT
+STRING hello
+RELEASE
+
+REM Test HOLD with CTRL
+REM Should open a new tab in most browsers
+HOLD CTRL
+STRING t
+RELEASE
+
+REM Test media keys
+MEDIA VOLUMEUP
+DELAY 500
+MEDIA VOLUMEDOWN
+DELAY 500
+MEDIA MUTE
+
+REM Test more media keys
+MEDIA PLAYPAUSE
+DELAY 1000
+MEDIA STOP
+
+REM Test browser controls
+MEDIA BROWSER
+DELAY 500
+MEDIA REFRESH
+
+REM Test Globe key
+GLOBE
+
+REM Test combined HOLD/RELEASE
+HOLD CTRL
+HOLD SHIFT
+STRING n
+RELEASE

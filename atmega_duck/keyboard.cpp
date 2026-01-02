@@ -43,6 +43,22 @@ namespace keyboard {
         0xc0,       //   END_COLLECTION
     };
 
+    const uint8_t consumerDescriptor[] PROGMEM {
+        //  Consumer Control
+        0x05, 0x0C, //   USAGE_PAGE (Consumer)
+        0x09, 0x01, //   USAGE (Consumer Control)
+        0xa1, 0x01, //   COLLECTION (Application)
+        0x85, 0x03, //   REPORT_ID (3)
+        0x15, 0x00, //   LOGICAL_MINIMUM (0)
+        0x26, 0xFF, 0x03, // LOGICAL_MAXIMUM (1023)
+        0x19, 0x00, //   USAGE_MINIMUM (0)
+        0x2A, 0xFF, 0x03, // USAGE_MAXIMUM (1023)
+        0x75, 0x10, //   REPORT_SIZE (16)
+        0x95, 0x01, //   REPORT_COUNT (1)
+        0x81, 0x00, //   INPUT (Data,Ary,Abs)
+        0xc0,       //   END_COLLECTION
+    };
+
     report makeReport(uint8_t modifiers = 0, uint8_t key1 = 0, uint8_t key2 = 0, uint8_t key3 = 0, uint8_t key4 = 0, uint8_t key5 = 0, uint8_t key6 = 0);
 
     report makeReport(uint8_t modifiers, uint8_t key1, uint8_t key2, uint8_t key3, uint8_t key4, uint8_t key5, uint8_t key6) {
@@ -64,9 +80,11 @@ namespace keyboard {
 
     // ====== PUBLIC ====== //
     void begin() {
-        static HIDSubDescriptor node(keyboardDescriptor, sizeof(keyboardDescriptor));
+        static HIDSubDescriptor keyboardNode(keyboardDescriptor, sizeof(keyboardDescriptor));
+        static HIDSubDescriptor consumerNode(consumerDescriptor, sizeof(consumerDescriptor));
 
-        HID().AppendDescriptor(&node);
+        HID().AppendDescriptor(&keyboardNode);
+        HID().AppendDescriptor(&consumerNode);
     }
 
     void setLocale(hid_locale_t* locale) {
@@ -209,5 +227,17 @@ namespace keyboard {
         for (size_t i = 0; i<len; ++i) {
             i += write(&str[i]);
         }
+    }
+
+    void sendConsumer(uint16_t key) {
+        uint8_t report[2];
+        report[0] = key & 0xFF;
+        report[1] = (key >> 8) & 0xFF;
+        HID().SendReport(3, report, 2);
+    }
+
+    void releaseConsumer() {
+        uint8_t report[2] = {0, 0};
+        HID().SendReport(3, report, 2);
     }
 }
