@@ -19,6 +19,14 @@
 
 #define COM_VERSION 4
 
+// ! Heartbeat configuration
+#ifndef ENABLE_HEARTBEAT
+#define ENABLE_HEARTBEAT 1
+#endif
+#ifndef HEARTBEAT_MS
+#define HEARTBEAT_MS 1000UL
+#endif
+
 typedef struct status_t {
     unsigned int version : 8;
     unsigned int wait    : 16;
@@ -40,6 +48,23 @@ namespace com {
                       + (uint16_t)data_buf.len
                       + (uint16_t)duckparser::getDelayTime();
         status.repeat = (uint8_t)(duckparser::getRepeats() > 255 ? 255 : duckparser::getRepeats());
+
+#if ENABLE_HEARTBEAT
+        // Heartbeat: toggle LSB of status.wait to indicate progress
+        static unsigned long last_heartbeat = 0;
+        unsigned long now = millis();
+
+        if (status.wait > 0) {
+            // If busy and heartbeat interval elapsed, toggle LSB
+            if (now - last_heartbeat >= HEARTBEAT_MS) {
+                status.wait ^= 1;
+                last_heartbeat = now;
+            }
+        } else {
+            // Reset heartbeat timer when idle
+            last_heartbeat = now;
+        }
+#endif
     }
 
     // ========== PRIVATE I2C ========== //
