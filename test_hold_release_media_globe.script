@@ -1,0 +1,56 @@
+REM Test script for HOLD/RELEASE and MEDIA/GLOBE support
+DEFAULTDELAY 200
+
+REM Test HOLD and RELEASE
+REM Hold Ctrl and press C (copy)
+HOLD
+CTRL
+C
+RELEASE
+DELAY 500
+
+REM Test GLOBE key (should work like GUI/WINDOWS)
+GLOBE r
+DELAY 500
+STRING notepad
+ENTER
+DELAY 1000
+
+REM Test MEDIA keys
+MEDIA_VOLUMEUP
+DELAY 200
+MEDIA_VOLUMEDOWN
+DELAY 200
+MEDIA_MUTE
+DELAY 500
+
+REM Test MEDIA_PLAY and other media controls
+MEDIA_PLAYPAUSE
+DELAY 200
+MEDIA_NEXT
+DELAY 200
+MEDIA_PREVIOUS
+DELAY 200
+MEDIA_STOP
+DELAY 500
+
+REM More complex HOLD/RELEASE test
+REM Type "Hello" while holding shift (should type "HELLO")
+HOLD
+SHIFT
+RELEASE
+STRING Hello
+ENTER
+
+REM Test multiple keys held at once
+HOLD
+CTRL
+SHIFT
+T
+RELEASE
+
+REM Close notepad
+ALT F4
+DELAY 500
+RIGHT
+ENTER

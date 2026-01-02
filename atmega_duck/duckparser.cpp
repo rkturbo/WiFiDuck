@@ -22,6 +22,7 @@ namespace duckparser {
     // ====== PRIVATE ===== //
     bool inString  = false;
     bool inComment = false;
+    bool holdMode  = false;  // HOLD mode - don't auto-release keys
 
     int defaultDelay = 5;
     int repeatNum    = 0;
@@ -124,6 +125,29 @@ namespace duckparser {
         else if (compare(str, len, "SHIFT", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LSHIFT);
         else if (compare(str, len, "ALT", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LALT);
         else if (compare(str, len, "WINDOWS", CASE_SENSETIVE) || compare(str, len, "GUI", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LMETA);
+        else if (compare(str, len, "GLOBE", CASE_SENSETIVE)) keyboard::pressModifier(KEY_MOD_LMETA);
+
+        // Media Keys
+        else if (compare(str, len, "MEDIA_PLAY", CASE_SENSETIVE) || compare(str, len, "MEDIA_PLAYPAUSE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PLAYPAUSE);
+        else if (compare(str, len, "MEDIA_PAUSE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PLAYPAUSE);
+        else if (compare(str, len, "MEDIA_STOP", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_STOP);
+        else if (compare(str, len, "MEDIA_NEXT", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_NEXTSONG);
+        else if (compare(str, len, "MEDIA_PREVIOUS", CASE_SENSETIVE) || compare(str, len, "MEDIA_PREV", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PREVIOUSSONG);
+        else if (compare(str, len, "MEDIA_EJECT", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_EJECTCD);
+        else if (compare(str, len, "MEDIA_VOLUMEUP", CASE_SENSETIVE) || compare(str, len, "MEDIA_VOL_UP", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_VOLUMEUP);
+        else if (compare(str, len, "MEDIA_VOLUMEDOWN", CASE_SENSETIVE) || compare(str, len, "MEDIA_VOL_DOWN", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_VOLUMEDOWN);
+        else if (compare(str, len, "MEDIA_MUTE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_MUTE);
+        else if (compare(str, len, "MEDIA_WWW", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_WWW);
+        else if (compare(str, len, "MEDIA_BACK", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_BACK);
+        else if (compare(str, len, "MEDIA_FORWARD", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_FORWARD);
+        else if (compare(str, len, "MEDIA_FIND", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_FIND);
+        else if (compare(str, len, "MEDIA_SCROLLUP", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_SCROLLUP);
+        else if (compare(str, len, "MEDIA_SCROLLDOWN", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_SCROLLDOWN);
+        else if (compare(str, len, "MEDIA_EDIT", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_EDIT);
+        else if (compare(str, len, "MEDIA_SLEEP", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_SLEEP);
+        else if (compare(str, len, "MEDIA_COFFEE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_COFFEE);
+        else if (compare(str, len, "MEDIA_REFRESH", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_REFRESH);
+        else if (compare(str, len, "MEDIA_CALC", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_CALC);
 
         // Utf8 character
         else keyboard::press(str);
@@ -315,6 +339,19 @@ namespace duckparser {
                 ignore_delay = true;
             }
 
+            // HOLD (-> enter hold mode - keys pressed will not be auto-released)
+            else if (compare(cmd->str, cmd->len, "HOLD", CASE_SENSETIVE)) {
+                holdMode = true;
+                ignore_delay = true;
+            }
+
+            // RELEASE (-> release all held keys and exit hold mode)
+            else if (compare(cmd->str, cmd->len, "RELEASE", CASE_SENSETIVE)) {
+                release();
+                holdMode = false;
+                ignore_delay = true;
+            }
+
             // STRING (-> type each character)
             else if (inString || compare(cmd->str, cmd->len, "STRING", CASE_SENSETIVE)) {
                 if (inString) {
@@ -377,7 +414,8 @@ namespace duckparser {
                     w = w->next;
                 }
 
-                if (line_end) release();
+                // Only auto-release if not in hold mode
+                if (line_end && !holdMode) release();
             }
 
             n = n->next;
