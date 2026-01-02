@@ -1,0 +1,94 @@
+REM Comprehensive test for HOLD/RELEASE and MEDIA/GLOBE commands
+REM This script demonstrates all new features added to WiFiDuck
+
+DEFAULTDELAY 200
+
+REM ======================
+REM HOLD and RELEASE Tests
+REM ======================
+
+REM Test 1: Hold SHIFT to type uppercase
+REM Expected: Types "HELLO WORLD"
+HOLD SHIFT
+STRING hello world
+RELEASE
+
+REM Test 2: Multiple modifiers
+REM Expected: Ctrl+Shift+T (Reopen closed tab in browser)
+HOLD CTRL
+HOLD SHIFT
+STRING t
+RELEASE
+
+REM Test 3: Complex key combination
+REM Expected: Ctrl+Alt+Delete on Windows
+HOLD CTRL
+HOLD ALT
+DELETE
+RELEASE
+
+REM ======================
+REM MEDIA Command Tests
+REM ======================
+
+REM Test 4: Volume controls
+MEDIA VOLUMEUP
+DELAY 300
+MEDIA VOLUMEUP
+DELAY 300
+MEDIA VOLUMEDOWN
+DELAY 300
+MEDIA MUTE
+
+REM Test 5: Media playback
+MEDIA PLAYPAUSE
+DELAY 2000
+MEDIA NEXT
+DELAY 1000
+MEDIA STOP
+
+REM Test 6: Browser controls
+MEDIA BROWSER
+DELAY 1000
+MEDIA REFRESH
+DELAY 500
+MEDIA BACK
+
+REM Test 7: System controls
+MEDIA CALC
+DELAY 1000
+MEDIA EMAIL
+DELAY 1000
+MEDIA MYCOMPUTER
+
+REM ======================
+REM GLOBE Key Test
+REM ======================
+
+REM Test 8: Globe key
+GLOBE
+DELAY 500
+
+REM ======================
+REM Combined Tests
+REM ======================
+
+REM Test 9: HOLD with STRING
+REM Types a URL in the address bar with proper formatting
+HOLD CTRL
+STRING l
+RELEASE
+DELAY 200
+STRING https://github.com/rkturbo/WiFiDuck
+ENTER
+
+REM Test 10: Multiple HOLD/RELEASE cycles
+HOLD SHIFT
+STRING test1
+RELEASE
+STRING normaltext
+HOLD SHIFT
+STRING test2
+RELEASE
+
+REM End of test script
