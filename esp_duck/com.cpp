@@ -17,6 +17,10 @@
 #define REQ_EOT 0x04     // !< End of transmission
 #define REQ_VERSION 0x02 // !< Request current version
 
+// Timeout (ms) to keep trying a stalled transmission before dropping the connection.
+// Set to 60s to accommodate long, slow lines.
+#define TRANSMIT_TIMEOUT_MS 60000UL
+
 #define COM_VERSION 4
 
 typedef struct status_t {
@@ -38,7 +42,8 @@ namespace com {
 
     status_t status;
 
-    uint8_t transm_tries = 0;
+    uint8_t transm_tries = 3;
+    unsigned long transm_start_time = 0;
 
     // ========= PRIVATE I2C ========= //
 
@@ -90,9 +95,17 @@ namespace com {
         if (!react_on_status && (status.wait == prev_wait)) {
             debug("Last message was not processed");
 
-            if (transm_tries > 20) {
+            // Start timeout tracking on first detection of stall
+            if (transm_start_time == 0) {
+                transm_start_time = millis();
+            }
+
+            unsigned long elapsed = millis() - transm_start_time;
+
+            if (elapsed > TRANSMIT_TIMEOUT_MS) {
                 connection = false;
-                debugln("...LOOP ERROR");
+                debugln("...TRANSMIT TIMEOUT");
+                transm_start_time = 0;
             } else {
                 debugln("...repeating last line");
 
@@ -100,9 +113,14 @@ namespace com {
 
                 react_on_status = true;
 
-                ++transm_tries;
+                // Increment for diagnostics, cap at 255
+                if (transm_tries < 255) {
+                    ++transm_tries;
+                }
             }
         } else {
+            // Reset on progress
+            transm_start_time = 0;
             transm_tries = 0;
         }
 
