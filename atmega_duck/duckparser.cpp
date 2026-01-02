@@ -402,7 +402,8 @@ namespace duckparser {
                     }
 
                     keyboard::send(&k);
-                    keyboard::release();
+                    // Only auto-release if not in hold mode
+                    if (!holdMode) keyboard::release();
                 }
             }
 
