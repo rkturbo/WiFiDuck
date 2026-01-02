@@ -469,30 +469,27 @@ namespace duckparser {
                         if (isMouseButton(w->str, w->len, &button)) {
                             mouse::mouse_release(button);
                         } else {
-                            // Try to release as a regular key
-                            // We need to map the token back to a key code
-                            // For simplicity, handle common cases
-                            if (w->len == 1) {
-                                keyboard::releaseKey(keyboard::press(w->str));
-                            } else if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
+                            // For regular keys, map common named keys to their keycodes
+                            if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
                             else if (compare(w->str, w->len, "SPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_SPACE);
                             else if (compare(w->str, w->len, "TAB", CASE_SENSETIVE)) keyboard::releaseKey(KEY_TAB);
                             else if (compare(w->str, w->len, "ESC", CASE_SENSETIVE) || compare(w->str, w->len, "ESCAPE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ESC);
-                            // Add more common keys as needed
+                            else if (compare(w->str, w->len, "BACKSPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_BACKSPACE);
+                            else if (compare(w->str, w->len, "DELETE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_DELETE);
+                            // For other keys including single chars, cannot determine keycode from name alone
+                            // This is a limitation - user should use specific key names or release all with empty RELEASE
                         }
                     }
 #else
                     else {
-                        // Try to release as a regular key
-                        if (w->len == 1) {
-                            // For single character, we need to get its key code - this is tricky
-                            // For now, just release all keys
-                            keyboard::release();
-                        } else if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
+                        // For regular keys, map common named keys to their keycodes
+                        if (compare(w->str, w->len, "ENTER", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ENTER);
                         else if (compare(w->str, w->len, "SPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_SPACE);
                         else if (compare(w->str, w->len, "TAB", CASE_SENSETIVE)) keyboard::releaseKey(KEY_TAB);
                         else if (compare(w->str, w->len, "ESC", CASE_SENSETIVE) || compare(w->str, w->len, "ESCAPE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_ESC);
-                        // Add more common keys as needed
+                        else if (compare(w->str, w->len, "BACKSPACE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_BACKSPACE);
+                        else if (compare(w->str, w->len, "DELETE", CASE_SENSETIVE)) keyboard::releaseKey(KEY_DELETE);
+                        // For other keys including single chars, cannot determine keycode from name alone
                     }
 #endif
                     w = w->next;

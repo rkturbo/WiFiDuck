@@ -441,7 +441,10 @@ The `HOLD` and `RELEASE` commands allow you to press keys or mouse buttons and h
 - Drag-and-drop operations with the mouse
 - Gaming macros
 
-**Important Note:** Standard USB keyboards support 6-key rollover (NKRO). This means you can hold up to 6 regular keys simultaneously, plus modifiers (CTRL, SHIFT, ALT, GUI). Attempting to hold more than 6 regular keys may result in unpredictable behavior.
+**Important Notes:** 
+- Standard USB keyboards support 6-key rollover (NKRO). This means you can hold up to 6 regular keys simultaneously, plus modifiers (CTRL, SHIFT, ALT, GUI). Attempting to hold more than 6 regular keys may result in unpredictable behavior.
+- `RELEASE` supports releasing modifiers (CTRL, SHIFT, ALT, WINDOWS/GUI), mouse buttons (LEFTCLICK, RIGHTCLICK, MIDDLECLICK), and common named keys (ENTER, SPACE, TAB, ESC, BACKSPACE, DELETE).
+- For other keys, the HOLD/RELEASE mechanism has limitations due to keyboard mapping complexities. Use named keys when possible.
 
 Examples:
 ```
