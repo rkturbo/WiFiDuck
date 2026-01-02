@@ -1,0 +1,51 @@
+REM Test script for HOLD and RELEASE commands
+REM This tests the new HOLD/RELEASE functionality
+
+DEFAULTDELAY 500
+
+REM Test 1: Hold Ctrl and press C (Copy)
+REM Opens notepad, types text, then uses HOLD to copy
+GUI r
+STRING notepad
+ENTER
+DELAY 1000
+STRING Hello World! This is a test of HOLD and RELEASE.
+ENTER
+DELAY 500
+
+REM Select all the text using HOLD/RELEASE
+HOLD CTRL
+STRING a
+RELEASE
+DELAY 200
+
+REM Copy using HOLD/RELEASE
+HOLD CTRL
+STRING c
+RELEASE
+DELAY 200
+
+REM Test 2: Multiple modifier keys with HOLD
+REM Hold Ctrl+Shift and press arrow to select word
+HOME
+DELAY 200
+HOLD CTRL
+HOLD SHIFT
+RIGHT
+RIGHT
+RIGHT
+RELEASE
+DELAY 500
+
+REM Test 3: Hold Alt and press Tab (window switching)
+HOLD ALT
+TAB
+DELAY 200
+TAB
+RELEASE
+DELAY 500
+
+REM Clean up - close notepad without saving
+ALT F4
+RIGHT
+ENTER
