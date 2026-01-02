@@ -90,7 +90,7 @@ namespace com {
         if (!react_on_status && (status.wait == prev_wait)) {
             debug("Last message was not processed");
 
-            if (transm_tries > 3) {
+            if (transm_tries > 20) {
                 connection = false;
                 debugln("...LOOP ERROR");
             } else {
