@@ -42,6 +42,6 @@ namespace keyboard {
 #ifdef ENABLE_CONSUMER
     void sendConsumer(consumer_report* c);
     void releaseConsumer();
-    void pressConsumerKey(uint8_t key);
+    void pressConsumerKey(uint16_t key);
 #endif
 }

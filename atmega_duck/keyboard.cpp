@@ -246,7 +246,7 @@ namespace keyboard {
         sendConsumer(&prev_consumer_report);
     }
 
-    void pressConsumerKey(uint8_t key) {
+    void pressConsumerKey(uint16_t key) {
         prev_consumer_report.key = key;
         sendConsumer(&prev_consumer_report);
         releaseConsumer();
