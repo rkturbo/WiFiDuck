@@ -130,6 +130,7 @@ namespace duckparser {
         // Media Keys
         else if (compare(str, len, "MEDIA_PLAY", CASE_SENSETIVE) || compare(str, len, "MEDIA_PLAYPAUSE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PLAYPAUSE);
         else if (compare(str, len, "MEDIA_PAUSE", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PLAYPAUSE);
+        else if (compare(str, len, "MEDIA_STOPCD", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_STOPCD);
         else if (compare(str, len, "MEDIA_STOP", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_STOP);
         else if (compare(str, len, "MEDIA_NEXT", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_NEXTSONG);
         else if (compare(str, len, "MEDIA_PREVIOUS", CASE_SENSETIVE) || compare(str, len, "MEDIA_PREV", CASE_SENSETIVE)) keyboard::pressKey(KEY_MEDIA_PREVIOUSSONG);
