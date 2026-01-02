@@ -104,6 +104,7 @@ namespace com {
                 transm_start_time = millis();
             }
 
+            // Calculate elapsed time (handles millis() wraparound via unsigned arithmetic)
             unsigned long elapsed = millis() - transm_start_time;
 
             if (elapsed > TRANSMIT_TIMEOUT_MS) {
