@@ -55,6 +55,10 @@
 #define CASE_SENSETIVE false
 #define DEFAULT_SLEEP 5
 
+/*! ===== Consumer HID Support ===== */
+// Uncomment to enable Consumer HID (media keys) support
+// #define ENABLE_CONSUMER
+
 /*! ========== Safety Checks ========= */
 #if !defined(ENABLE_I2C) && !defined(ENABLE_SERIAL)
 #define ENABLE_I2C

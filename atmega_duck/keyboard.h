@@ -9,6 +9,7 @@
 // under Tools > Board
 #include <HID.h>
 #include "locales.h"
+#include "config.h"
 
 namespace keyboard {
     typedef struct report {
@@ -16,6 +17,12 @@ namespace keyboard {
         uint8_t reserved;
         uint8_t keys[6];
     } report;
+
+#ifdef ENABLE_CONSUMER
+    typedef struct consumer_report {
+        uint16_t key;
+    } consumer_report;
+#endif
 
     void begin();
 
@@ -31,4 +38,10 @@ namespace keyboard {
 
     uint8_t write(const char* c);
     void write(const char* str, size_t len);
+
+#ifdef ENABLE_CONSUMER
+    void sendConsumer(consumer_report* c);
+    void releaseConsumer();
+    void pressConsumerKey(uint8_t key);
+#endif
 }

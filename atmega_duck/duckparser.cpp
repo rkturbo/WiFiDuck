@@ -368,6 +368,83 @@ namespace duckparser {
                 }
             }
 
+            // HOLD (press keys without releasing)
+            else if (compare(cmd->str, cmd->len, "HOLD", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+
+                while (w) {
+                    press(w->str, w->len);
+                    w = w->next;
+                }
+            }
+
+            // RELEASE (release all held keys)
+            else if (compare(cmd->str, cmd->len, "RELEASE", CASE_SENSETIVE)) {
+                release();
+            }
+
+#ifdef ENABLE_CONSUMER
+            // MEDIA (consumer control keys)
+            else if (compare(cmd->str, cmd->len, "MEDIA", CASE_SENSETIVE)) {
+                word_node* w = cmd->next;
+
+                if (w) {
+                    // Check for media key names
+                    if (compare(w->str, w->len, "PLAY", CASE_SENSETIVE) || compare(w->str, w->len, "PLAYPAUSE", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_PLAY_PAUSE);
+                    } else if (compare(w->str, w->len, "PAUSE", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_PAUSE);
+                    } else if (compare(w->str, w->len, "STOP", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_STOP);
+                    } else if (compare(w->str, w->len, "NEXT", CASE_SENSETIVE) || compare(w->str, w->len, "NEXTTRACK", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_SCAN_NEXT_TRACK);
+                    } else if (compare(w->str, w->len, "PREV", CASE_SENSETIVE) || compare(w->str, w->len, "PREVIOUS", CASE_SENSETIVE) || compare(w->str, w->len, "PREVIOUSTRACK", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_SCAN_PREVIOUS_TRACK);
+                    } else if (compare(w->str, w->len, "VOLUMEUP", CASE_SENSETIVE) || compare(w->str, w->len, "VOLUP", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_VOLUME_INCREMENT);
+                    } else if (compare(w->str, w->len, "VOLUMEDOWN", CASE_SENSETIVE) || compare(w->str, w->len, "VOLDOWN", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_VOLUME_DECREMENT);
+                    } else if (compare(w->str, w->len, "MUTE", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_MUTE);
+                    } else if (compare(w->str, w->len, "EJECT", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_EJECT);
+                    } else if (compare(w->str, w->len, "FASTFORWARD", CASE_SENSETIVE) || compare(w->str, w->len, "FF", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_FAST_FORWARD);
+                    } else if (compare(w->str, w->len, "REWIND", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_REWIND);
+                    } else if (compare(w->str, w->len, "RECORD", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_RECORD);
+                    } else if (compare(w->str, w->len, "CALCULATOR", CASE_SENSETIVE) || compare(w->str, w->len, "CALC", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AL_CALCULATOR);
+                    } else if (compare(w->str, w->len, "EMAIL", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AL_EMAIL_READER);
+                    } else if (compare(w->str, w->len, "BROWSER", CASE_SENSETIVE) || compare(w->str, w->len, "WWW", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AL_LOCAL_BROWSER);
+                    } else if (compare(w->str, w->len, "SEARCH", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_SEARCH);
+                    } else if (compare(w->str, w->len, "HOME", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_HOME);
+                    } else if (compare(w->str, w->len, "BACK", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_BACK);
+                    } else if (compare(w->str, w->len, "FORWARD", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_FORWARD);
+                    } else if (compare(w->str, w->len, "REFRESH", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_REFRESH);
+                    } else if (compare(w->str, w->len, "BOOKMARKS", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_AC_BOOKMARKS);
+                    } else if (compare(w->str, w->len, "SLEEP", CASE_SENSETIVE)) {
+                        keyboard::pressConsumerKey(CONSUMER_SLEEP);
+                    }
+                }
+            }
+
+            // GLOBE (Globe/Fn key)
+            else if (compare(cmd->str, cmd->len, "GLOBE", CASE_SENSETIVE)) {
+                keyboard::pressKey(KEY_GLOBE);
+                keyboard::release();
+            }
+#endif
+
             // Otherwise go through words and look for keys to press
             else {
                 word_node* w = wl->first;

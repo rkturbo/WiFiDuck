@@ -43,6 +43,26 @@ namespace keyboard {
         0xc0,       //   END_COLLECTION
     };
 
+#ifdef ENABLE_CONSUMER
+    const uint8_t consumerDescriptor[] PROGMEM {
+        //  Consumer Control
+        0x05, 0x0C,       //   USAGE_PAGE (Consumer)
+        0x09, 0x01,       //   USAGE (Consumer Control)
+        0xA1, 0x01,       //   COLLECTION (Application)
+        0x85, 0x03,       //   REPORT_ID (3)
+        0x19, 0x00,       //   USAGE_MINIMUM (Unassigned)
+        0x2A, 0x3C, 0x02, //   USAGE_MAXIMUM (AC Format)
+        0x15, 0x00,       //   LOGICAL_MINIMUM (0)
+        0x26, 0x3C, 0x02, //   LOGICAL_MAXIMUM (572)
+        0x95, 0x01,       //   REPORT_COUNT (1)
+        0x75, 0x10,       //   REPORT_SIZE (16)
+        0x81, 0x00,       //   INPUT (Data,Array,Abs)
+        0xC0,             //   END_COLLECTION
+    };
+    
+    consumer_report prev_consumer_report = consumer_report { 0x0000 };
+#endif
+
     report makeReport(uint8_t modifiers = 0, uint8_t key1 = 0, uint8_t key2 = 0, uint8_t key3 = 0, uint8_t key4 = 0, uint8_t key5 = 0, uint8_t key6 = 0);
 
     report makeReport(uint8_t modifiers, uint8_t key1, uint8_t key2, uint8_t key3, uint8_t key4, uint8_t key5, uint8_t key6) {
@@ -67,6 +87,11 @@ namespace keyboard {
         static HIDSubDescriptor node(keyboardDescriptor, sizeof(keyboardDescriptor));
 
         HID().AppendDescriptor(&node);
+        
+#ifdef ENABLE_CONSUMER
+        static HIDSubDescriptor consumerNode(consumerDescriptor, sizeof(consumerDescriptor));
+        HID().AppendDescriptor(&consumerNode);
+#endif
     }
 
     void setLocale(hid_locale_t* locale) {
@@ -210,4 +235,21 @@ namespace keyboard {
             i += write(&str[i]);
         }
     }
+
+#ifdef ENABLE_CONSUMER
+    void sendConsumer(consumer_report* c) {
+        HID().SendReport(3, (uint8_t*)c, sizeof(consumer_report));
+    }
+
+    void releaseConsumer() {
+        prev_consumer_report.key = 0x0000;
+        sendConsumer(&prev_consumer_report);
+    }
+
+    void pressConsumerKey(uint8_t key) {
+        prev_consumer_report.key = key;
+        sendConsumer(&prev_consumer_report);
+        releaseConsumer();
+    }
+#endif
 }
