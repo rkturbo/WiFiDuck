@@ -35,11 +35,11 @@ MEDIA_STOP
 DELAY 500
 
 REM More complex HOLD/RELEASE test
-REM Type "Hello" while holding shift (should type "HELLO")
+REM Hold shift and type "a" (should type "A")
 HOLD
 SHIFT
+a
 RELEASE
-STRING Hello
 ENTER
 
 REM Test multiple keys held at once
