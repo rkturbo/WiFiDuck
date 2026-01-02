@@ -19,6 +19,9 @@
 
 #define COM_VERSION 4
 
+// Timeout (ms) to keep trying a stalled transmission before dropping the connection. Set to 60s to accommodate long, slow lines.
+#define TRANSMIT_TIMEOUT_MS 60000UL
+
 typedef struct status_t {
     unsigned int version : 8;
     unsigned int wait    : 16;
@@ -38,7 +41,8 @@ namespace com {
 
     status_t status;
 
-    uint8_t transm_tries = 0;
+    uint8_t transm_tries = 3;
+    unsigned long transm_start_time = 0;
 
     // ========= PRIVATE I2C ========= //
 
@@ -90,9 +94,17 @@ namespace com {
         if (!react_on_status && (status.wait == prev_wait)) {
             debug("Last message was not processed");
 
-            if (transm_tries > 20) {
+            // First detection of stall - initialize timer
+            if (transm_start_time == 0) {
+                transm_start_time = millis();
+            }
+
+            unsigned long elapsed = millis() - transm_start_time;
+
+            if (elapsed > TRANSMIT_TIMEOUT_MS) {
                 connection = false;
-                debugln("...LOOP ERROR");
+                transm_start_time = 0;
+                debugln("...TIMEOUT ERROR");
             } else {
                 debugln("...repeating last line");
 
@@ -104,6 +116,7 @@ namespace com {
             }
         } else {
             transm_tries = 0;
+            transm_start_time = 0;
         }
 
         request_time = millis();
