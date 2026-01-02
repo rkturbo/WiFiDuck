@@ -19,6 +19,10 @@
 
 #define COM_VERSION 4
 
+// Transmit timeout in milliseconds (60 seconds).
+// Long timeout accommodates slow/long script lines that may take time to process.
+#define TRANSMIT_TIMEOUT_MS 60000UL
+
 typedef struct status_t {
     unsigned int version : 8;
     unsigned int wait    : 16;
@@ -38,7 +42,11 @@ namespace com {
 
     status_t status;
 
-    uint8_t transm_tries = 0;
+    // Retry count for diagnostics/logging (not used for timeout control)
+    uint8_t transm_tries = 3;
+    
+    // Track time when retransmission started (for time-based timeout)
+    unsigned long transm_start_time = 0;
 
     // ========= PRIVATE I2C ========= //
 
@@ -87,13 +95,24 @@ namespace com {
 
         debugln();
 
+        // Time-based retransmit logic for unprocessed messages
         if (!react_on_status && (status.wait == prev_wait)) {
             debug("Last message was not processed");
 
-            if (transm_tries > 20) {
+            // Start timer on first detection
+            if (transm_start_time == 0) {
+                transm_start_time = millis();
+            }
+
+            unsigned long elapsed = millis() - transm_start_time;
+
+            if (elapsed > TRANSMIT_TIMEOUT_MS) {
+                // Timeout exceeded - drop connection
                 connection = false;
-                debugln("...LOOP ERROR");
+                transm_start_time = 0;
+                debugln("...TIMEOUT ERROR");
             } else {
+                // Still within timeout - repeat the message
                 debugln("...repeating last line");
 
                 status.repeat = 1;
@@ -103,6 +122,8 @@ namespace com {
                 ++transm_tries;
             }
         } else {
+            // Progress observed - reset counters
+            transm_start_time = 0;
             transm_tries = 0;
         }
 
