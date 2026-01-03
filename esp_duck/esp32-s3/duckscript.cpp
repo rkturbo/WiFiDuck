@@ -54,23 +54,23 @@ namespace duckscript {
 
             // UTF-8 multi-byte character detection
             if((b & 0x80) == 0x80) {
-                uint8_t extra_chars = 0;
+                uint8_t sequence_length = 1; // Default to 1 byte (continuation byte)
             
                 // 2-byte sequence: 110xxxxx
                 if((b & 0xE0) == 0xC0) {
-                    extra_chars = 2;
+                    sequence_length = 2;
                 }
                 // 3-byte sequence: 1110xxxx
                 else if((b & 0xF0) == 0xE0) {
-                    extra_chars = 3;
+                    sequence_length = 3;
                 }
                 // 4-byte sequence: 11110xxx
                 else if((b & 0xF8) == 0xF0) {
-                    extra_chars = 4;
+                    sequence_length = 4;
                 }
 
-                // utf8 char doesn't fit into buffer
-                if ((buf_i + extra_chars) > BUFFER_SIZE) break;
+                // Check if complete UTF-8 sequence fits into buffer
+                if ((buf_i + sequence_length) > BUFFER_SIZE) break;
             }
             
             eol        = (b == '\n');
