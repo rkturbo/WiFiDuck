@@ -101,7 +101,10 @@
                         </tr>
                     </tbody>
                 </table>
-                <h3>Functions</h3>
+                <h3>Commands / Functions</h3>
+                <p>
+                    <strong>Note:</strong> Commands are case-insensitive and must be written one per line.
+                </p>
                 <table id="ducky-functions-table">
                     <thead>
                         <tr>
@@ -117,9 +120,14 @@
                             <td>Comment</td>
                         </tr>
                         <tr>
-                            <td><code>DEFAULTDELAY</code> or <code>DEFAULT_DELAY</code></td>
-                            <td><code>DEFAULTDELAY 200</code></td>
-                            <td>Time in ms between every command</td>
+                            <td><code>STRING</code></td>
+                            <td><code>STRING Hello World!</code></td>
+                            <td>Types the following string. Commands are stored in ESP non-REPEAT history.</td>
+                        </tr>
+                        <tr>
+                            <td><code>STRINGLN</code></td>
+                            <td><code>STRINGLN Hello World!</code></td>
+                            <td>Types the following string and presses ENTER. Commands are stored in ESP non-REPEAT history.</td>
                         </tr>
                         <tr>
                             <td><code>DELAY</code></td>
@@ -127,14 +135,29 @@
                             <td>Delay in ms</td>
                         </tr>
                         <tr>
-                            <td><code>STRING</code></td>
-                            <td><code>STRING Hello World!</code></td>
-                            <td>Types the following string</td>
+                            <td><code>DEFAULT_DELAY</code></td>
+                            <td><code>DEFAULT_DELAY 200</code></td>
+                            <td>Default delay in ms between every command</td>
                         </tr>
                         <tr>
-                            <td><code>REPEAT</code> or <code>REPLAY</code></td>
+                            <td><code>STRING_DELAY</code></td>
+                            <td><code>STRING_DELAY 50</code></td>
+                            <td>Fixed delay in ms between each character typed in STRING/STRINGLN commands. Use <code>STRING_DELAY 0</code> to disable.</td>
+                        </tr>
+                        <tr>
+                            <td><code>STRING_DELAY_RANDOM</code></td>
+                            <td><code>STRING_DELAY_RANDOM 10 50</code></td>
+                            <td>Random delay between min and max ms (inclusive) for each character typed in STRING/STRINGLN commands. Affects all subsequent STRING/STRINGLN commands until changed. Use <code>STRING_DELAY 0</code> to disable.</td>
+                        </tr>
+                        <tr>
+                            <td><code>REPEAT</code></td>
                             <td><code>REPEAT 3</code></td>
-                            <td>Repeats the last command n times</td>
+                            <td><strong>Single-argument:</strong> Forwarded to ATmega. Repeats the last single command n times.</td>
+                        </tr>
+                        <tr>
+                            <td><code>REPEAT</code></td>
+                            <td><code>REPEAT 3 2</code></td>
+                            <td><strong>Two-argument:</strong> Handled by ESP. Repeats the last N non-REPEAT history entries T times, in oldest→newest order. Repeated sends are not appended to history.</td>
                         </tr>
                         <tr>
                             <td><code>LOCALE</code></td>
@@ -154,6 +177,46 @@
                         </tr>
                     </tbody>
                 </table>
+                <h4>String Speed Control Examples</h4>
+                <p>Control typing speed to make scripts appear more human-like:</p>
+                <pre><code>REM Fixed delay of 50ms per character
+STRING_DELAY 50
+STRING This text types with 50ms between each character
+
+REM Random delay between 10-80ms per character (more natural)
+STRING_DELAY_RANDOM 10 80
+STRINGLN This text types with random delays
+
+REM Disable all character delays
+STRING_DELAY 0
+STRING Fast typing with no delays</code></pre>
+                
+                <h4>REPEAT Examples</h4>
+                <p><strong>Block Repeat Example:</strong></p>
+                <pre><code>REM Repeat a block of commands
+STRING Line 1
+ENTER
+STRING Line 2
+ENTER
+REPEAT 3 2
+REM This repeats "Line 1 + ENTER" and "Line 2 + ENTER" 3 times</code></pre>
+                
+                <p><strong>Repeated REPEAT (clamped behavior):</strong></p>
+                <pre><code>REM Nested repeats are clamped
+STRING Test
+ENTER
+REPEAT 2 1
+REPEAT 2 1
+REM Second REPEAT cannot repeat first REPEAT (not in history)</code></pre>
+                
+                <h4>Safety &amp; Best Practices</h4>
+                <ul>
+                    <li>Always test scripts in a safe environment before deployment</li>
+                    <li>Use <code>REM</code> comments to document your scripts</li>
+                    <li>Add appropriate delays to ensure commands execute reliably</li>
+                    <li>Use <code>STRING_DELAY_RANDOM</code> to make automated typing appear more natural</li>
+                    <li>Be cautious with <code>REPEAT</code> commands - verify the count to avoid unintended loops</li>
+                </ul>
                 <h3>Standard Keys</h3>
                 <table>
                     <thead>
