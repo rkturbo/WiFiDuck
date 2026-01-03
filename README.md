@@ -323,6 +323,7 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `DEFAULTDELAY` or `DEFAULT_DELAY` | `DEFAULTDELAY 200` | Time in ms between every command |
 | `DELAY` | `DELAY 1000` | Delay in ms |
 | `STRING` | `STRING Hello World!` | Types the following string |
+| `STRINGLN` | `STRINGLN Hello World!` | Types the following string and presses ENTER |
 | `REPEAT` or `REPLAY` | `REPEAT 3` | Repeats the last command n times |
 | `LOCALE` | `LOCALE DE` | Sets the keyboard layout. [List](#translate-keyboard-layout) |
 | `KEYCODE` | `KEYCODE 0x02 0x04` | Types a specific key code (modifier, key1[, ..., key6]) in decimal or hexadecimal |

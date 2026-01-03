@@ -21,6 +21,7 @@ extern "C" {
 namespace duckparser {
     // ====== PRIVATE ===== //
     bool inString  = false;
+    bool inStringLn = false;
     bool inComment = false;
 
     int defaultDelay = 5;
@@ -326,6 +327,23 @@ namespace duckparser {
                 inString = !line_end;
             }
 
+            // STRINGLN (-> type each character followed by ENTER)
+            else if (inStringLn || compare(cmd->str, cmd->len, "STRINGLN", CASE_SENSETIVE)) {
+                if (inStringLn) {
+                    type(n->str, n->len);
+                } else {
+                    type(line_str, line_str_len);
+                }
+
+                inStringLn = !line_end;
+                
+                // Press ENTER when line ends
+                if (line_end) {
+                    keyboard::pressKey(KEY_ENTER);
+                    keyboard::release();
+                }
+            }
+
             // LED
             else if (compare(cmd->str, cmd->len, "LED", CASE_SENSETIVE)) {
                 word_node* w = cmd->next;
@@ -382,7 +400,7 @@ namespace duckparser {
 
             n = n->next;
 
-            if (!inString && !inComment && !ignore_delay) sleep(defaultDelay);
+            if (!inString && !inStringLn && !inComment && !ignore_delay) sleep(defaultDelay);
 
             if (line_end && (repeatNum > 0)) --repeatNum;
 
