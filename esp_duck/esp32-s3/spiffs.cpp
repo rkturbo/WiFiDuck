@@ -21,7 +21,15 @@ namespace spiffs {
     // ===== PUBLIC ====== //
     void begin() {
         debug("Initializing SPIFFS...");
-        SPIFFS.begin();
+        // ESP32 SPIFFS.begin() returns bool
+        if (!SPIFFS.begin(true)) { // format on failure
+            debugln("FAILED - formatting");
+            SPIFFS.format();
+            if (!SPIFFS.begin(true)) {
+                debugln("CRITICAL - SPIFFS mount failed");
+                return;
+            }
+        }
         debugln("OK");
 
         String FILE_NAME = "/startup_spiffs_test";
@@ -44,35 +52,30 @@ namespace spiffs {
     }
 
     size_t size() {
-        FSInfo fs_info;
-
-        SPIFFS.info(fs_info);
-        return fs_info.totalBytes;
+        return SPIFFS.totalBytes();
     }
 
     size_t usedBytes() {
-        FSInfo fs_info;
-
-        SPIFFS.info(fs_info);
-        return fs_info.usedBytes;
+        return SPIFFS.usedBytes();
     }
 
     size_t freeBytes() {
-        FSInfo fs_info;
-
-        SPIFFS.info(fs_info);
-        return fs_info.totalBytes - fs_info.usedBytes;
+        return SPIFFS.totalBytes() - SPIFFS.usedBytes();
     }
 
     size_t size(String fileName) {
         fixPath(fileName);
 
         File f = SPIFFS.open(fileName, "r");
+        if (!f) return 0;
 
-        return f.size();
+        size_t s = f.size();
+        f.close();
+        return s;
     }
 
     bool exists(String fileName) {
+        fixPath(fileName);
         return SPIFFS.exists(fileName);
     }
 
@@ -132,13 +135,22 @@ namespace spiffs {
 
         fixPath(dirName);
 
-        Dir dir = SPIFFS.openDir(dirName);
+        // ESP32 uses different directory iteration API
+        File root = SPIFFS.open(dirName);
+        if (!root || !root.isDirectory()) {
+            res += "\n";
+            return res;
+        }
 
-        while (dir.next()) {
-            res += dir.fileName();
-            res += ' ';
-            res += size(dir.fileName());
-            res += '\n';
+        File file = root.openNextFile();
+        while (file) {
+            if (!file.isDirectory()) {
+                res += file.name();
+                res += ' ';
+                res += file.size();
+                res += '\n';
+            }
+            file = root.openNextFile();
         }
 
         if (res.length() == 0) {
@@ -202,11 +214,11 @@ namespace spiffs {
     }
 
     void streamClose() {
-        streamFile.close();
+        if (streamFile) streamFile.close();
     }
 
     bool streaming() {
-        return streamFile;
+        return (bool)streamFile;
     }
 
     size_t streamAvailable() {

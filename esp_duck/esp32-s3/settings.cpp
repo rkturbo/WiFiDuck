@@ -10,7 +10,7 @@
 #include "config.h"
 #include "eeprom.h"
 
-#define SETTINGS_ADDRES 1
+#define SETTINGS_KEY "settings"
 #define SETTINGS_MAGIC_NUM 1234567891
 
 namespace settings {
@@ -33,7 +33,7 @@ namespace settings {
     }
 
     void load() {
-        eeprom::getObject(SETTINGS_ADDRES, data);
+        eeprom::getObject(SETTINGS_KEY, data);
         if (data.magic_num != SETTINGS_MAGIC_NUM) reset();
 
         if (data.ssid[32] != 0) setSSID(WIFI_SSID);
@@ -52,7 +52,7 @@ namespace settings {
 
     void save() {
         debugln("Saving Settings");
-        eeprom::saveObject(SETTINGS_ADDRES, data);
+        eeprom::saveObject(SETTINGS_KEY, data);
     }
 
     String toString() {

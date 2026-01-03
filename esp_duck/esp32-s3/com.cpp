@@ -7,7 +7,7 @@
 
 #include "com.h"
 
-#include <Wire.h> // Arduino i2c
+#include <Wire.h> // ESP32 Arduino i2c
 
 #include "config.h"
 #include "debug.h"
@@ -134,6 +134,7 @@ namespace com {
     void i2c_begin() {
         unsigned long start_time = millis();
 
+        // ESP32 Wire.begin takes SDA and SCL pins
         Wire.begin(I2C_SDA, I2C_SCL);
         Wire.setClock(I2C_CLOCK_SPEED);
 
@@ -178,7 +179,7 @@ namespace com {
 
 #endif // ifdef ENABLE_I2C
 
-    // ========= PRIVATE I2C ========= //
+    // ========= PRIVATE SERIAL ========= //
 
 #ifdef ENABLE_SERIAL
     bool ongoing_transmission = false;
@@ -325,7 +326,8 @@ namespace com {
         while (i < len) {
             char b = str[i];
             
-            if ((b != '\n') && (b != '\n')) debug(b);
+            // Don't debug print newlines and carriage returns for cleaner output
+            if ((b != '\n') && (b != '\r')) debug(b);
             transmit(b);
 
             ++i;

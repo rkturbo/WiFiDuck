@@ -5,7 +5,7 @@
 
 #pragma once
 
-#define VERSION "1.2.0"
+#define VERSION "1.2.0-esp32s3"
 
 /*! ===== DEBUG Settings ===== */
 // #define ENABLE_DEBUG
@@ -19,8 +19,10 @@
 
 // #define ENABLE_I2C
 #define I2C_ADDR 0x31
-// #define I2C_SDA 4
-// #define I2C_SCL 5
+// Default I2C pins for ESP32-S3: SDA=8, SCL=9
+// Adjust based on your board variant
+#define I2C_SDA 8
+#define I2C_SCL 9
 #define I2C_CLOCK_SPEED 100000L
 
 #define BUFFER_SIZE 256
@@ -29,9 +31,8 @@
 #define MSG_CONNECTED "LED 0 0 25\n"
 #define MSG_STARTED "LED 0 25 0\n"
 
-/*! ======EEPROM Settings ===== */
-#define EEPROM_SIZE       4095
-#define EEPROM_BOOT_ADDR  3210
+/*! ===== Preferences Settings (replaces EEPROM on ESP32) ===== */
+#define PREFERENCES_NAMESPACE "wifiduck"
 #define BOOT_MAGIC_NUM    1234567890
 
 /*! ===== WiFi Settings ===== */
@@ -42,16 +43,20 @@
 #define HOSTNAME "wifiduck"
 #define URL "wifi.duck"
 
-/*! ========== Safty checks ========== */
+/*! ========== Safety checks ========== */
 #if !defined(ENABLE_I2C) && !defined(ENABLE_SERIAL)
   #define ENABLE_I2C
-  #define I2C_SDA 4
-  #define I2C_SCL 5
+  #ifndef I2C_SDA
+    #define I2C_SDA 8
+  #endif
+  #ifndef I2C_SCL
+    #define I2C_SCL 9
+  #endif
 #endif /* if !defined(ENABLE_I2C) || !defined(ENABLE_SERIAL) */
 
-#if !defined(ESP8266)
-#error You are compiling for the wrong board, mate! Select something with an ESP8266.
-#endif /* ifdef DUCKMCU && DUCKMCU!="ATMEGA32U4" */
+#if !defined(ESP32)
+#error You are compiling for the wrong board! Select an ESP32-S3 board.
+#endif /* ifndef ESP32 */
 
 #if defined(ENABLE_DEBUG) && defined(ENABLE_SERIAL) && DEBUG_PORT == SERIAL_PORT
 #error Using same serial port for debugging and Communication!\

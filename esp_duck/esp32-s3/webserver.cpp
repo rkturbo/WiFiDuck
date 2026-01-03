@@ -5,12 +5,13 @@
 
 #include "webserver.h"
 
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <DNSServer.h>
 #include <ArduinoOTA.h>
-#include <ESPAsyncTCP.h>
+#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <Update.h>
 
 #include "config.h"
 #include "debug.h"
@@ -80,7 +81,7 @@ namespace webserver {
     // ===== PUBLIC ===== //
     void begin() {
         // Access Point
-        WiFi.hostname(HOSTNAME);
+        WiFi.setHostname(HOSTNAME);
 
         // WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(settings::getSSID(), settings::getPassword(), settings::getChannelNum());
@@ -128,7 +129,7 @@ namespace webserver {
             if (error == OTA_AUTH_ERROR) events.send("Auth Failed", "ota");
             else if (error == OTA_BEGIN_ERROR) events.send("Begin Failed", "ota");
             else if (error == OTA_CONNECT_ERROR) events.send("Connect Failed", "ota");
-            else if (error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
+            else if (error == OTA_RECEIVE_ERROR) events.send("Receive Failed", "ota");
             else if (error == OTA_END_ERROR) events.send("End Failed", "ota");
         });
         ArduinoOTA.setHostname(HOSTNAME);
@@ -151,8 +152,8 @@ namespace webserver {
         }, [](AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final) {
             if (!index) {
                 debugf("Update Start: %s\n", filename.c_str());
-                Update.runAsync(true);
-                if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
+                // ESP32 uses different API for Update
+                if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
                     Update.printError(Serial);
                 }
             }
@@ -170,6 +171,8 @@ namespace webserver {
             }
         });
 
+        // DNS Server for captive portal
+        // Redirects all DNS requests to the AP IP address
         dnsServer.setTTL(300);
         dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
         dnsServer.start(53, URL, apIP);
