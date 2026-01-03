@@ -5,12 +5,13 @@
 
 #include "webserver.h"
 
-#include <ESP8266WiFi.h>
-#include <ESP8266mDNS.h>
+#include <WiFi.h>
+#include <ESPmDNS.h>
 #include <DNSServer.h>
 #include <ArduinoOTA.h>
-#include <ESPAsyncTCP.h>
+#include <AsyncTCP.h>
 #include <ESPAsyncWebServer.h>
+#include <Update.h>
 
 #include "config.h"
 #include "debug.h"
@@ -80,7 +81,7 @@ namespace webserver {
     // ===== PUBLIC ===== //
     void begin() {
         // Access Point
-        WiFi.hostname(HOSTNAME);
+        WiFi.setHostname(HOSTNAME);
 
         // WiFi.mode(WIFI_AP_STA);
         WiFi.softAP(settings::getSSID(), settings::getPassword(), settings::getChannelNum());
@@ -151,8 +152,8 @@ namespace webserver {
         }, [](AsyncWebServerRequest* request, String filename, size_t index, uint8_t* data, size_t len, bool final) {
             if (!index) {
                 debugf("Update Start: %s\n", filename.c_str());
-                Update.runAsync(true);
-                if (!Update.begin((ESP.getFreeSketchSpace() - 0x1000) & 0xFFFFF000)) {
+                // ESP32 uses different API for Update
+                if (!Update.begin(UPDATE_SIZE_UNKNOWN)) {
                     Update.printError(Serial);
                 }
             }
