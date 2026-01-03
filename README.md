@@ -4,6 +4,8 @@
 <h1> Not recommended for use </h1>
 <h3> There is plenty of junk and AI code </h3>
 <h3> I'm really not good at this sort of thing </h3>
+<h5> This place is getting to be a mess </h5>
+<h5> Please excuse this until I get around to cleaning up after CoPilot</h5>
 <img alt="WiFi Duck Logo" src="img/thumbnail.jpg" width="640">
 </p>
 
