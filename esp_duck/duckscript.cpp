@@ -18,7 +18,123 @@ namespace duckscript {
     char * prevMessage    { NULL };
     size_t prevMessageLen { 0 };
 
+    // Line history for multi-line REPEAT
+    #define MAX_HISTORY_LINES 256
+    struct LineHistory {
+        char* line;
+        size_t len;
+    };
+    LineHistory lineHistory[MAX_HISTORY_LINES];
+    int historyCount = 0;
+    int historyIndex = 0;
+
+    // State for ESP-side multi-line REPEAT
+    bool inEspRepeat = false;
+    int espRepeatTimes = 0;
+    int espRepeatLines = 0;
+    int espRepeatCurrentTime = 0;
+    int espRepeatCurrentLine = 0;
+
     bool running { false };
+
+    // Helper function to add line to history
+    void addToHistory(const char* buf, size_t len) {
+        // Free the oldest line if we're at capacity
+        if (lineHistory[historyIndex].line) {
+            free(lineHistory[historyIndex].line);
+        }
+        
+        // Store the new line
+        lineHistory[historyIndex].line = (char*)malloc(len + 1);
+        if (lineHistory[historyIndex].line) {
+            memcpy(lineHistory[historyIndex].line, buf, len);
+            lineHistory[historyIndex].line[len] = '\0';
+            lineHistory[historyIndex].len = len;
+            
+            // Move to next slot in circular buffer
+            historyIndex = (historyIndex + 1) % MAX_HISTORY_LINES;
+            if (historyCount < MAX_HISTORY_LINES) historyCount++;
+        }
+    }
+
+    // Helper function to parse REPEAT command arguments
+    // Returns: 0 = not a REPEAT, 1 = single-arg REPEAT, 2 = two-arg REPEAT
+    // Sets times and lines output parameters
+    int parseRepeatCommand(const char* buf, size_t len, int* times, int* lines) {
+        if (len < 6 || strncmp(buf, "REPEAT", 6) != 0) return 0;
+        
+        // Skip "REPEAT" and any spaces
+        size_t i = 6;
+        while (i < len && (buf[i] == ' ' || buf[i] == '\t')) i++;
+        
+        if (i >= len || buf[i] == '\n' || buf[i] == '\r') {
+            // No arguments
+            return 0;
+        }
+        
+        // Parse first argument (times)
+        *times = 0;
+        while (i < len && buf[i] >= '0' && buf[i] <= '9') {
+            *times = *times * 10 + (buf[i] - '0');
+            i++;
+        }
+        
+        // Skip spaces
+        while (i < len && (buf[i] == ' ' || buf[i] == '\t')) i++;
+        
+        // Check if there's a second argument
+        if (i >= len || buf[i] == '\n' || buf[i] == '\r') {
+            // Single argument
+            return 1;
+        }
+        
+        // Parse second argument (lines)
+        *lines = 0;
+        while (i < len && buf[i] >= '0' && buf[i] <= '9') {
+            *lines = *lines * 10 + (buf[i] - '0');
+            i++;
+        }
+        
+        // Two arguments
+        return 2;
+    }
+
+    // Helper function to send next line in ESP-side repeat sequence
+    void sendNextEspRepeatLine() {
+        if (!inEspRepeat) return;
+        
+        // Check if we've completed all repetitions
+        if (espRepeatCurrentTime >= espRepeatTimes) {
+            inEspRepeat = false;
+            espRepeatTimes = 0;
+            espRepeatLines = 0;
+            espRepeatCurrentTime = 0;
+            espRepeatCurrentLine = 0;
+            debugln("ESP-side REPEAT completed");
+            nextLine();  // Continue with next line from file
+            return;
+        }
+        
+        // Send the next line in the current repetition
+        int startIdx = (historyIndex - espRepeatLines + MAX_HISTORY_LINES) % MAX_HISTORY_LINES;
+        int idx = (startIdx + espRepeatCurrentLine) % MAX_HISTORY_LINES;
+        
+        if (lineHistory[idx].line) {
+            debugf("ESP REPEAT [%d/%d] line [%d/%d]\n", 
+                   espRepeatCurrentTime + 1, espRepeatTimes, 
+                   espRepeatCurrentLine + 1, espRepeatLines);
+            com::send(lineHistory[idx].line, lineHistory[idx].len);
+        }
+        
+        // Move to next line
+        espRepeatCurrentLine++;
+        
+        // If we've sent all lines in this repetition, move to next repetition
+        if (espRepeatCurrentLine >= espRepeatLines) {
+            espRepeatCurrentLine = 0;
+            espRepeatCurrentTime++;
+        }
+    }
 
     // ===== PUBLIC ===== //
     void run(String fileName) {
@@ -32,6 +148,12 @@ namespace duckscript {
 
     void nextLine() {
         if (!running) return;
+        
+        // If we're in the middle of an ESP-side repeat, continue that
+        if (inEspRepeat) {
+            sendNextEspRepeatLine();
+            return;
+        }
 
         if (!f) {
             debugln("File error");
@@ -76,22 +198,46 @@ namespace duckscript {
 
         if (!eol) debugln();
 
-        if (strncmp((char*)buf, "REPEAT", _min(buf_i, 6)) != 0) {
-            if (prevMessage) free(prevMessage);
-            prevMessageLen = buf_i;
-            prevMessage    = (char*)malloc(prevMessageLen + 1);
-            memcpy(prevMessage, buf, buf_i);
-            prevMessage[buf_i] = '\0';
-        }
-
-        com::send(buf, buf_i);
-
-        if (strncmp((char*)buf, "REPEAT", _min(buf_i, 6)) != 0) {
-            if (prevMessage) free(prevMessage);
-            prevMessageLen = buf_i;
-            prevMessage    = (char*)malloc(prevMessageLen + 1);
-            memcpy(prevMessage, buf, buf_i);
-            prevMessage[buf_i] = '\0';
+        // Parse REPEAT command
+        int times = 0, lines = 0;
+        int repeatType = parseRepeatCommand(buf, buf_i, &times, &lines);
+        
+        if (repeatType == 2) {
+            // Two-argument REPEAT: handle on ESP side
+            debugf("ESP-side REPEAT %d lines %d times\n", lines, times);
+            
+            // Validate arguments
+            if (lines > 0 && times > 0 && lines <= historyCount) {
+                // Start ESP-side repeat sequence
+                inEspRepeat = true;
+                espRepeatTimes = times;
+                espRepeatLines = lines;
+                espRepeatCurrentTime = 0;
+                espRepeatCurrentLine = 0;
+                
+                // Send the first line
+                sendNextEspRepeatLine();
+            } else {
+                // Invalid arguments, skip this command and continue
+                debugln("Invalid ESP-side REPEAT arguments");
+                nextLine();
+            }
+        } else {
+            // Not a two-arg REPEAT or single-arg REPEAT
+            // Store in history (excluding REPEAT commands)
+            if (strncmp((char*)buf, "REPEAT", _min(buf_i, 6)) != 0) {
+                addToHistory(buf, buf_i);
+                
+                // Also keep prevMessage for backward compatibility with single-arg REPEAT
+                if (prevMessage) free(prevMessage);
+                prevMessageLen = buf_i;
+                prevMessage    = (char*)malloc(prevMessageLen + 1);
+                memcpy(prevMessage, buf, buf_i);
+                prevMessage[buf_i] = '\0';
+            }
+            
+            // Send the command to ATmega
+            com::send(buf, buf_i);
         }
     }
 
@@ -110,6 +256,24 @@ namespace duckscript {
             running = false;
             debugln("Stopped script");
         }
+        
+        // Reset ESP-side repeat state
+        inEspRepeat = false;
+        espRepeatTimes = 0;
+        espRepeatLines = 0;
+        espRepeatCurrentTime = 0;
+        espRepeatCurrentLine = 0;
+        
+        // Free line history
+        for (int i = 0; i < MAX_HISTORY_LINES; i++) {
+            if (lineHistory[i].line) {
+                free(lineHistory[i].line);
+                lineHistory[i].line = NULL;
+                lineHistory[i].len = 0;
+            }
+        }
+        historyCount = 0;
+        historyIndex = 0;
     }
 
     void stop(String fileName) {
