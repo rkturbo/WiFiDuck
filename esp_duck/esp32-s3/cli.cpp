@@ -10,10 +10,8 @@
 // SimpleCLI library
 #include <SimpleCLI.h>
 
-// Get RAM (heap) usage
-extern "C" {
-#include "user_interface.h"
-}
+// ESP32 heap functions
+#include <ESP.h>
 
 // Import modules used for different commands
 #include "spiffs.h"
@@ -79,7 +77,7 @@ namespace cli {
          * Prints number of free bytes in the RAM
          */
         cli.addCommand("ram", [](cmd* c) {
-            size_t freeRam = system_get_free_heap_size();
+            size_t freeRam = ESP.getFreeHeap();
             String res     = String(freeRam) + " bytes available";
             print(res);
         });

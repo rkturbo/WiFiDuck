@@ -1,6 +1,7 @@
 #pragma once
 
 #include <Preferences.h>
+#include "config.h"
 
 namespace eeprom {
     void begin();

@@ -326,7 +326,7 @@ namespace com {
         while (i < len) {
             char b = str[i];
             
-            if ((b != '\n') && (b != '\n')) debug(b);
+            if ((b != '\n') && (b != '\r')) debug(b);
             transmit(b);
 
             ++i;
