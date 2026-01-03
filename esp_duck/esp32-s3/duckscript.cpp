@@ -85,14 +85,6 @@ namespace duckscript {
         }
 
         com::send(buf, buf_i);
-
-        if (strncmp((char*)buf, "REPEAT", _min(buf_i, 6)) != 0) {
-            if (prevMessage) free(prevMessage);
-            prevMessageLen = buf_i;
-            prevMessage    = (char*)malloc(prevMessageLen + 1);
-            memcpy(prevMessage, buf, buf_i);
-            prevMessage[buf_i] = '\0';
-        }
     }
 
     void repeat() {

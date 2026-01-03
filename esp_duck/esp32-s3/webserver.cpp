@@ -129,7 +129,7 @@ namespace webserver {
             if (error == OTA_AUTH_ERROR) events.send("Auth Failed", "ota");
             else if (error == OTA_BEGIN_ERROR) events.send("Begin Failed", "ota");
             else if (error == OTA_CONNECT_ERROR) events.send("Connect Failed", "ota");
-            else if (error == OTA_RECEIVE_ERROR) events.send("Recieve Failed", "ota");
+            else if (error == OTA_RECEIVE_ERROR) events.send("Receive Failed", "ota");
             else if (error == OTA_END_ERROR) events.send("End Failed", "ota");
         });
         ArduinoOTA.setHostname(HOSTNAME);
