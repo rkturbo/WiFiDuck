@@ -1,0 +1,35 @@
+REM Test script for STRINGLN command
+DEFAULTDELAY 200
+
+REM Test 1: Basic STRINGLN (types text followed by ENTER)
+STRINGLN Hello World!
+
+REM Test 2: Multiple STRINGLN commands
+STRINGLN First line
+STRINGLN Second line
+STRINGLN Third line
+
+REM Test 3: STRINGLN with special characters
+STRINGLN Testing special chars: !@#$%^&*()
+
+REM Test 4: Compare STRING vs STRINGLN
+STRING This line has no ENTER
+DELAY 500
+STRINGLN This line has ENTER automatically
+
+REM Test 5: STRINGLN with STRING_DELAY
+STRING_DELAY 50
+STRINGLN Text with 50ms delay per character
+
+REM Test 6: Empty STRINGLN (just ENTER)
+STRINGLN
+
+REM Test 7: STRINGLN with different locales
+LOCALE US
+STRINGLN US Layout test
+LOCALE DE
+STRINGLN DE Layout test: äöüß
+
+REM Test 8: STRINGLN with REPEAT
+STRINGLN Repeat this line
+REPEAT 2
