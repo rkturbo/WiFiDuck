@@ -82,10 +82,12 @@ namespace duckscript {
         *times = 0;
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
             int digit = buf[i] - '0';
-            // Check for overflow before multiplication
-            if (*times > (INT_MAX - digit) / 10) {
+            // Correct overflow check
+            if (*times > INT_MAX / 10 || (*times == INT_MAX / 10 && digit > INT_MAX % 10)) {
                 // Overflow would occur, cap at reasonable maximum
                 *times = 1000;  // Cap at 1000 repetitions
+                // Skip remaining digits
+                while (i < len && buf[i] >= '0' && buf[i] <= '9') i++;
                 break;
             }
             *times = *times * 10 + digit;
@@ -105,10 +107,12 @@ namespace duckscript {
         *lines = 0;
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
             int digit = buf[i] - '0';
-            // Check for overflow before multiplication
-            if (*lines > (INT_MAX - digit) / 10) {
+            // Correct overflow check
+            if (*lines > INT_MAX / 10 || (*lines == INT_MAX / 10 && digit > INT_MAX % 10)) {
                 // Overflow would occur, cap at MAX_HISTORY_LINES
                 *lines = MAX_HISTORY_LINES;
+                // Skip remaining digits
+                while (i < len && buf[i] >= '0' && buf[i] <= '9') i++;
                 break;
             }
             *lines = *lines * 10 + digit;
@@ -139,6 +143,10 @@ namespace duckscript {
         if (espRepeatLines > historyCount) {
             debugln("ESP-side REPEAT aborted - insufficient history");
             inEspRepeat = false;
+            espRepeatTimes = 0;
+            espRepeatLines = 0;
+            espRepeatCurrentTime = 0;
+            espRepeatCurrentLine = 0;
             nextLine();
             return;
         }
@@ -150,7 +158,16 @@ namespace duckscript {
             // History not yet full, start from beginning
             actualStart = historyCount - espRepeatLines;
             // Safety check for negative index
-            if (actualStart < 0) actualStart = 0;
+            if (actualStart < 0) {
+                debugln("ESP-side REPEAT aborted - invalid start index");
+                inEspRepeat = false;
+                espRepeatTimes = 0;
+                espRepeatLines = 0;
+                espRepeatCurrentTime = 0;
+                espRepeatCurrentLine = 0;
+                nextLine();
+                return;
+            }
         } else {
             // History is full, use circular buffer calculation
             actualStart = (historyIndex - espRepeatLines + MAX_HISTORY_LINES) % MAX_HISTORY_LINES;
@@ -163,11 +180,22 @@ namespace duckscript {
             idx = (actualStart + espRepeatCurrentLine) % MAX_HISTORY_LINES;
         }
         
+        // Validate index and line existence before sending
         if (idx >= 0 && idx < MAX_HISTORY_LINES && lineHistory[idx].line) {
             debugf("ESP REPEAT [%d/%d] line [%d/%d]\n", 
                    espRepeatCurrentTime + 1, espRepeatTimes, 
                    espRepeatCurrentLine + 1, espRepeatLines);
             com::send(lineHistory[idx].line, lineHistory[idx].len);
+        } else {
+            // Missing line - abort the repeat
+            debugf("ESP-side REPEAT aborted - missing line at index %d\n", idx);
+            inEspRepeat = false;
+            espRepeatTimes = 0;
+            espRepeatLines = 0;
+            espRepeatCurrentTime = 0;
+            espRepeatCurrentLine = 0;
+            nextLine();
+            return;
         }
         
         // Move to next line
@@ -199,75 +227,80 @@ namespace duckscript {
             return;
         }
 
-        if (!f) {
-            debugln("File error");
-            stopAll();
-            return;
-        }
-
-        if (!f.available()) {
-            debugln("Reached end of file");
-            stopAll();
-            return;
-        }
-
-        char buf[BUFFER_SIZE];
-        unsigned int buf_i =  0;
-        bool eol           =  false; // End of line
-
-        while (f.available() && !eol && buf_i < BUFFER_SIZE) {
-            uint8_t b = f.peek();
-
-            //utf8
-            if((b & 0x80) == 0x80) {
-                uint8_t extra_chars = 0;
-            
-                if((b & 0xC0) == 0xC0) {
-                    extra_chars = 2;
-                } else if((b & 0xE0) == 0xC0) {
-                    extra_chars = 3;
-                } else if((b & 0xF0) == 0xC0) {
-                    extra_chars = 4;
-                }
-
-                // utf8 char doesn't fit into buffer
-                if ((buf_i + extra_chars) > BUFFER_SIZE) break;
+        // Loop to handle invalid REPEAT commands without recursion
+        while (running) {
+            if (!f) {
+                debugln("File error");
+                stopAll();
+                return;
             }
-            
-            eol        = (b == '\n');
-            buf[buf_i] = f.read();
-            ++buf_i;
-            // debug(char(b));
-        }
 
-        if (!eol) debugln();
+            if (!f.available()) {
+                debugln("Reached end of file");
+                stopAll();
+                return;
+            }
 
-        // Parse REPEAT command
-        int times = 0, lines = 0;
-        int repeatType = parseRepeatCommand(buf, buf_i, &times, &lines);
-        
-        if (repeatType == 2) {
-            // Two-argument REPEAT: handle on ESP side
-            debugf("ESP-side REPEAT %d lines %d times\n", lines, times);
-            
-            // Validate arguments
-            if (lines > 0 && times > 0 && lines <= historyCount) {
-                // Start ESP-side repeat sequence
-                inEspRepeat = true;
-                espRepeatTimes = times;
-                espRepeatLines = lines;
-                espRepeatCurrentTime = 0;
-                espRepeatCurrentLine = 0;
+            char buf[BUFFER_SIZE];
+            unsigned int buf_i =  0;
+            bool eol           =  false; // End of line
+
+            while (f.available() && !eol && buf_i < BUFFER_SIZE) {
+                uint8_t b = f.peek();
+
+                //utf8
+                if((b & 0x80) == 0x80) {
+                    uint8_t extra_chars = 0;
                 
-                // Send the first line
-                sendNextEspRepeatLine();
-            } else {
-                // Invalid arguments, skip this command and continue
-                debugln("Invalid ESP-side REPEAT arguments");
-                nextLine();
+                    if((b & 0xC0) == 0xC0) {
+                        extra_chars = 2;
+                    } else if((b & 0xE0) == 0xC0) {
+                        extra_chars = 3;
+                    } else if((b & 0xF0) == 0xC0) {
+                        extra_chars = 4;
+                    }
+
+                    // utf8 char doesn't fit into buffer
+                    if ((buf_i + extra_chars) > BUFFER_SIZE) break;
+                }
+                
+                eol        = (b == '\n');
+                buf[buf_i] = f.read();
+                ++buf_i;
+                // debug(char(b));
             }
-        } else {
-            // Not a two-arg REPEAT or single-arg REPEAT
+
+            if (!eol) debugln();
+
+            // Parse REPEAT command
+            int times = 0, lines = 0;
+            int repeatType = parseRepeatCommand(buf, buf_i, &times, &lines);
+            
+            if (repeatType == 2) {
+                // Two-argument REPEAT: handle on ESP side
+                debugf("ESP-side REPEAT %d lines %d times\n", lines, times);
+                
+                // Validate arguments
+                if (lines > 0 && times > 0 && lines <= historyCount) {
+                    // Start ESP-side repeat sequence
+                    inEspRepeat = true;
+                    espRepeatTimes = times;
+                    espRepeatLines = lines;
+                    espRepeatCurrentTime = 0;
+                    espRepeatCurrentLine = 0;
+                    
+                    // Send the first line
+                    sendNextEspRepeatLine();
+                    return;  // Exit the loop and function
+                } else {
+                    // Invalid arguments - skip this command and loop to read next line
+                    debugf("Invalid ESP-side REPEAT: times=%d, lines=%d, historyCount=%d\n", 
+                           times, lines, historyCount);
+                    continue;  // Loop to read next line without sending this one
+                }
+            }
+            
+            // Not a two-arg REPEAT or single-arg REPEAT or other command
             // Store in history (excluding REPEAT commands)
             if (strncmp((char*)buf, "REPEAT", _min(buf_i, 6)) != 0) {
                 addToHistory(buf, buf_i);
@@ -285,8 +318,9 @@ namespace duckscript {
                 }
             }
             
-            // Send the command to ATmega
+            // Send the command to ATmega and exit the loop
             com::send(buf, buf_i);
+            return;
         }
     }
 
