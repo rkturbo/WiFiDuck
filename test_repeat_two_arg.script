@@ -1,0 +1,41 @@
+REM Test script for two-argument REPEAT functionality
+DEFAULTDELAY 100
+
+REM Test 1: Basic two-arg REPEAT (repeat last 2 lines 3 times)
+STRING Line 1
+ENTER
+STRING Line 2
+ENTER
+REPEAT 3 2
+
+REM Test 2: Single-arg REPEAT (backward compatibility)
+STRING Single line test
+ENTER
+REPEAT 2
+
+REM Test 3: Two-arg REPEAT with different line count
+STRING First
+ENTER
+STRING Second
+ENTER
+STRING Third
+ENTER
+REPEAT 2 3
+
+REM Test 4: Edge case - repeat 1 line 1 time
+STRING One liner
+ENTER
+REPEAT 1 1
+
+REM Test 5: Two-arg REPEAT with delays
+DELAY 500
+STRING Delayed line 1
+ENTER
+DELAY 500
+STRING Delayed line 2
+ENTER
+REPEAT 2 2
+
+REM Done
+STRING Test completed!
+ENTER
