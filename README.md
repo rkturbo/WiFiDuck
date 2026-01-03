@@ -325,6 +325,7 @@ It's compatible to Ducky Script, which was developed by the wonderful people at 
 | `STRING` | `STRING Hello World!` | Types the following string |
 | `STRINGLN` | `STRINGLN Hello World!` | Types the following string and presses ENTER |
 | `REPEAT` or `REPLAY` | `REPEAT 3` | Repeats the last command n times |
+| `REPEAT` or `REPLAY` | `REPEAT 3 2` | Repeats the last 2 lines 3 times (ESP-side) |
 | `LOCALE` | `LOCALE DE` | Sets the keyboard layout. [List](#translate-keyboard-layout) |
 | `KEYCODE` | `KEYCODE 0x02 0x04` | Types a specific key code (modifier, key1[, ..., key6]) in decimal or hexadecimal |
 | `LED` | `LED 40 20 10` |Changes the color of the LED in decimal RGB values (0-255) |
