@@ -1,0 +1,28 @@
+REM Example demonstrating STRINGLN vs STRING
+REM This script opens Notepad and shows the difference
+
+DEFAULTDELAY 500
+
+REM Open Notepad
+GUI r
+STRING notepad
+ENTER
+DELAY 1000
+
+REM Using STRING (requires manual ENTER)
+STRING Line 1 typed with STRING command
+ENTER
+STRING Line 2 typed with STRING command
+ENTER
+
+REM Using STRINGLN (automatic ENTER)
+STRINGLN Line 3 typed with STRINGLN command
+STRINGLN Line 4 typed with STRINGLN command
+STRINGLN Line 5 typed with STRINGLN command
+
+REM Close Notepad without saving
+DELAY 1000
+ALT F4
+DELAY 500
+TAB
+ENTER
