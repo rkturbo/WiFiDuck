@@ -122,12 +122,12 @@
                         <tr>
                             <td><code>STRING</code></td>
                             <td><code>STRING Hello World!</code></td>
-                            <td>Types the following string. Commands are stored in ESP non-REPEAT history.</td>
+                            <td>Types the following string. Stored in history for use with two-argument REPEAT.</td>
                         </tr>
                         <tr>
                             <td><code>STRINGLN</code></td>
                             <td><code>STRINGLN Hello World!</code></td>
-                            <td>Types the following string and presses ENTER. Commands are stored in ESP non-REPEAT history.</td>
+                            <td>Types the following string and presses ENTER. Stored in history for use with two-argument REPEAT.</td>
                         </tr>
                         <tr>
                             <td><code>DELAY</code></td>
@@ -147,17 +147,17 @@
                         <tr>
                             <td><code>STRING_DELAY_RANDOM</code></td>
                             <td><code>STRING_DELAY_RANDOM 10 50</code></td>
-                            <td>Random delay between min and max ms (inclusive) for each character typed in STRING/STRINGLN commands. Affects all subsequent STRING/STRINGLN commands until changed. Use <code>STRING_DELAY 0</code> to disable.</td>
+                            <td>Random delay between min and max ms (inclusive) for each character typed in STRING/STRINGLN commands. Affects all subsequent STRING/STRINGLN commands until changed. Setting STRING_DELAY disables random mode.</td>
                         </tr>
                         <tr>
                             <td><code>REPEAT</code></td>
                             <td><code>REPEAT 3</code></td>
-                            <td><strong>Single-argument:</strong> Forwarded to ATmega. Repeats the last single command n times.</td>
+                            <td><strong>Single-argument:</strong> Repeats the last single command n times.</td>
                         </tr>
                         <tr>
                             <td><code>REPEAT</code></td>
                             <td><code>REPEAT 3 2</code></td>
-                            <td><strong>Two-argument:</strong> Handled by ESP. Repeats the last N non-REPEAT history entries T times, in oldest→newest order. Repeated sends are not appended to history.</td>
+                            <td><strong>Two-argument:</strong> Repeats the last N commands T times, in the order they were executed. REPEAT commands themselves are not stored in history.</td>
                         </tr>
                         <tr>
                             <td><code>LOCALE</code></td>
