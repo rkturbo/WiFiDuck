@@ -326,6 +326,7 @@ namespace com {
         while (i < len) {
             char b = str[i];
             
+            // Don't debug print newlines and carriage returns for cleaner output
             if ((b != '\n') && (b != '\r')) debug(b);
             transmit(b);
 

@@ -52,15 +52,20 @@ namespace duckscript {
         while (f.available() && !eol && buf_i < BUFFER_SIZE) {
             uint8_t b = f.peek();
 
-            //utf8
+            // UTF-8 multi-byte character detection
             if((b & 0x80) == 0x80) {
                 uint8_t extra_chars = 0;
             
-                if((b & 0xC0) == 0xC0) {
+                // 2-byte sequence: 110xxxxx
+                if((b & 0xE0) == 0xC0) {
                     extra_chars = 2;
-                } else if((b & 0xE0) == 0xC0) {
+                }
+                // 3-byte sequence: 1110xxxx
+                else if((b & 0xF0) == 0xE0) {
                     extra_chars = 3;
-                } else if((b & 0xF0) == 0xC0) {
+                }
+                // 4-byte sequence: 11110xxx
+                else if((b & 0xF8) == 0xF0) {
                     extra_chars = 4;
                 }
 

@@ -171,6 +171,8 @@ namespace webserver {
             }
         });
 
+        // DNS Server for captive portal
+        // Redirects all DNS requests to the AP IP address
         dnsServer.setTTL(300);
         dnsServer.setErrorReplyCode(DNSReplyCode::ServerFailure);
         dnsServer.start(53, URL, apIP);
