@@ -44,6 +44,7 @@ namespace duckscript {
         // Free the oldest line if we're at capacity
         if (lineHistory[historyIndex].line) {
             free(lineHistory[historyIndex].line);
+            lineHistory[historyIndex].line = NULL;
         }
         
         // Store the new line
@@ -56,6 +57,9 @@ namespace duckscript {
             // Move to next slot in circular buffer
             historyIndex = (historyIndex + 1) % MAX_HISTORY_LINES;
             if (historyCount < MAX_HISTORY_LINES) historyCount++;
+        } else {
+            // Malloc failed - log and continue without storing
+            debugln("Warning: Failed to allocate memory for line history");
         }
     }
 
@@ -131,12 +135,22 @@ namespace duckscript {
             return;
         }
         
+        // Additional safety check - make sure we still have enough history
+        if (espRepeatLines > historyCount) {
+            debugln("ESP-side REPEAT aborted - insufficient history");
+            inEspRepeat = false;
+            nextLine();
+            return;
+        }
+        
         // Send the next line in the current repetition
         // Calculate the actual index correctly based on history size
         int actualStart;
         if (historyCount < MAX_HISTORY_LINES) {
             // History not yet full, start from beginning
             actualStart = historyCount - espRepeatLines;
+            // Safety check for negative index
+            if (actualStart < 0) actualStart = 0;
         } else {
             // History is full, use circular buffer calculation
             actualStart = (historyIndex - espRepeatLines + MAX_HISTORY_LINES) % MAX_HISTORY_LINES;
@@ -149,7 +163,7 @@ namespace duckscript {
             idx = (actualStart + espRepeatCurrentLine) % MAX_HISTORY_LINES;
         }
         
-        if (idx >= 0 && lineHistory[idx].line) {
+        if (idx >= 0 && idx < MAX_HISTORY_LINES && lineHistory[idx].line) {
             debugf("ESP REPEAT [%d/%d] line [%d/%d]\n", 
                    espRepeatCurrentTime + 1, espRepeatTimes, 
                    espRepeatCurrentLine + 1, espRepeatLines);
@@ -262,8 +276,13 @@ namespace duckscript {
                 if (prevMessage) free(prevMessage);
                 prevMessageLen = buf_i;
                 prevMessage    = (char*)malloc(prevMessageLen + 1);
-                memcpy(prevMessage, buf, buf_i);
-                prevMessage[buf_i] = '\0';
+                if (prevMessage) {
+                    memcpy(prevMessage, buf, buf_i);
+                    prevMessage[buf_i] = '\0';
+                } else {
+                    debugln("Warning: Failed to allocate memory for prevMessage");
+                    prevMessageLen = 0;
+                }
             }
             
             // Send the command to ATmega
