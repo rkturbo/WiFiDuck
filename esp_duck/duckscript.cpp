@@ -69,6 +69,10 @@ namespace duckscript {
     int parseRepeatCommand(const char* buf, size_t len, int* times, int* lines) {
         if (len < 6 || strncmp(buf, "REPEAT", 6) != 0) return 0;
         
+        // Pre-calculate overflow detection constants
+        const int INT_MAX_DIV_10 = INT_MAX / 10;
+        const int INT_MAX_MOD_10 = INT_MAX % 10;
+        
         // Skip "REPEAT" and any spaces
         size_t i = 6;
         while (i < len && (buf[i] == ' ' || buf[i] == '\t')) i++;
@@ -83,7 +87,7 @@ namespace duckscript {
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
             int digit = buf[i] - '0';
             // Correct overflow check
-            if (*times > INT_MAX / 10 || (*times == INT_MAX / 10 && digit > INT_MAX % 10)) {
+            if (*times > INT_MAX_DIV_10 || (*times == INT_MAX_DIV_10 && digit > INT_MAX_MOD_10)) {
                 // Overflow would occur, cap at reasonable maximum
                 *times = 1000;  // Cap at 1000 repetitions
                 // Skip remaining digits
@@ -108,7 +112,7 @@ namespace duckscript {
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
             int digit = buf[i] - '0';
             // Correct overflow check
-            if (*lines > INT_MAX / 10 || (*lines == INT_MAX / 10 && digit > INT_MAX % 10)) {
+            if (*lines > INT_MAX_DIV_10 || (*lines == INT_MAX_DIV_10 && digit > INT_MAX_MOD_10)) {
                 // Overflow would occur, cap at MAX_HISTORY_LINES
                 *lines = MAX_HISTORY_LINES;
                 // Skip remaining digits
