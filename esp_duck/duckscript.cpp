@@ -11,6 +11,8 @@
 #include "com.h"
 #include "spiffs.h"
 
+#include <limits.h>  // For INT_MAX
+
 namespace duckscript {
     // ===== PRIVATE ===== //
     File f;
@@ -72,10 +74,17 @@ namespace duckscript {
             return 0;
         }
         
-        // Parse first argument (times)
+        // Parse first argument (times) with overflow protection
         *times = 0;
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
-            *times = *times * 10 + (buf[i] - '0');
+            int digit = buf[i] - '0';
+            // Check for overflow before multiplication
+            if (*times > (INT_MAX - digit) / 10) {
+                // Overflow would occur, cap at reasonable maximum
+                *times = 1000;  // Cap at 1000 repetitions
+                break;
+            }
+            *times = *times * 10 + digit;
             i++;
         }
         
@@ -88,10 +97,17 @@ namespace duckscript {
             return 1;
         }
         
-        // Parse second argument (lines)
+        // Parse second argument (lines) with overflow protection
         *lines = 0;
         while (i < len && buf[i] >= '0' && buf[i] <= '9') {
-            *lines = *lines * 10 + (buf[i] - '0');
+            int digit = buf[i] - '0';
+            // Check for overflow before multiplication
+            if (*lines > (INT_MAX - digit) / 10) {
+                // Overflow would occur, cap at MAX_HISTORY_LINES
+                *lines = MAX_HISTORY_LINES;
+                break;
+            }
+            *lines = *lines * 10 + digit;
             i++;
         }
         
@@ -116,10 +132,24 @@ namespace duckscript {
         }
         
         // Send the next line in the current repetition
-        int startIdx = (historyIndex - espRepeatLines + MAX_HISTORY_LINES) % MAX_HISTORY_LINES;
-        int idx = (startIdx + espRepeatCurrentLine) % MAX_HISTORY_LINES;
+        // Calculate the actual index correctly based on history size
+        int actualStart;
+        if (historyCount < MAX_HISTORY_LINES) {
+            // History not yet full, start from beginning
+            actualStart = historyCount - espRepeatLines;
+        } else {
+            // History is full, use circular buffer calculation
+            actualStart = (historyIndex - espRepeatLines + MAX_HISTORY_LINES) % MAX_HISTORY_LINES;
+        }
         
-        if (lineHistory[idx].line) {
+        int idx;
+        if (historyCount < MAX_HISTORY_LINES) {
+            idx = actualStart + espRepeatCurrentLine;
+        } else {
+            idx = (actualStart + espRepeatCurrentLine) % MAX_HISTORY_LINES;
+        }
+        
+        if (idx >= 0 && lineHistory[idx].line) {
             debugf("ESP REPEAT [%d/%d] line [%d/%d]\n", 
                    espRepeatCurrentTime + 1, espRepeatTimes, 
                    espRepeatCurrentLine + 1, espRepeatLines);
