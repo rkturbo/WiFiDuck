@@ -1,228 +1,88 @@
-/*
-   This software is licensed under the MIT License. See the license file for details.
-   Source: https://github.com/spacehuhntech/WiFiDuck
- */
+#include <Arduino.h>
+#include <FS.h>
+#include <LITTLEFS.h> // LittleFS for ESP32 (lorol's library)
 
-#include "spiffs.h"
+namespace spiffs { // keep namespace name for compatibility with rest of code
 
-#include "config.h"
-#include "debug.h"
-
-namespace spiffs {
-    File streamFile;
-
-    // ===== PRIVATE ===== //
-    void fixPath(String& path) {
-        if (!path.startsWith("/")) {
-            path = "/" + path;
-        }
-    }
-
-    // ===== PUBLIC ====== //
-    void begin() {
-        debug("Initializing SPIFFS...");
-        // ESP32 SPIFFS.begin() returns bool
-        if (!SPIFFS.begin(true)) { // format on failure
-            debugln("FAILED - formatting");
-            SPIFFS.format();
-            if (!SPIFFS.begin(true)) {
-                debugln("CRITICAL - SPIFFS mount failed");
-                return;
-            }
-        }
-        debugln("OK");
-
-        String FILE_NAME = "/startup_spiffs_test";
-
-        remove(FILE_NAME);
-        create(FILE_NAME);
-        File f = open(FILE_NAME);
-        if (!f) {
-            format();
+void begin() {
+    // Format on first mount failure
+    if (!LITTLEFS.begin(true)) {
+        Serial.println("LittleFS mount failed, attempting format...");
+        LITTLEFS.format();
+        if (!LITTLEFS.begin()) {
+            Serial.println("LittleFS format+mount failed");
         } else {
-            f.close();
-            remove(FILE_NAME);
+            Serial.println("LittleFS formatted and mounted");
         }
-    }
-
-    void format() {
-        debug("Formatting SPIFFS...");
-        SPIFFS.format();
-        debugln("OK");
-    }
-
-    size_t size() {
-        return SPIFFS.totalBytes();
-    }
-
-    size_t usedBytes() {
-        return SPIFFS.usedBytes();
-    }
-
-    size_t freeBytes() {
-        return SPIFFS.totalBytes() - SPIFFS.usedBytes();
-    }
-
-    size_t size(String fileName) {
-        fixPath(fileName);
-
-        File f = SPIFFS.open(fileName, "r");
-        if (!f) return 0;
-
-        size_t s = f.size();
-        f.close();
-        return s;
-    }
-
-    bool exists(String fileName) {
-        fixPath(fileName);
-        return SPIFFS.exists(fileName);
-    }
-
-    File open(String fileName) {
-        fixPath(fileName);
-
-        return SPIFFS.open(fileName, "a+");
-    }
-
-    void create(String fileName) {
-        fixPath(fileName);
-
-        File f = SPIFFS.open(fileName, "a+");
-
-        f.close();
-    }
-
-    void remove(String fileName) {
-        fixPath(fileName);
-
-        SPIFFS.remove(fileName);
-    }
-
-    void rename(String oldName, String newName) {
-        fixPath(oldName);
-        fixPath(newName);
-
-        SPIFFS.rename(oldName, newName);
-    }
-
-    void write(String fileName, const char* str) {
-        File f = open(fileName);
-
-        if (f) {
-            f.println(str);
-            f.close();
-            debugln("Wrote file");
-        } else {
-            debugln("File error");
-        }
-    }
-
-    void write(String fileName, const uint8_t* buf, size_t len) {
-        File f = open(fileName);
-
-        if (f) {
-            f.write(buf, len);
-            f.close();
-            debugln("Wrote file");
-        } else {
-            debugln("File error");
-        }
-    }
-
-    String listDir(String dirName) {
-        String res;
-
-        fixPath(dirName);
-
-        // ESP32 uses different directory iteration API
-        File root = SPIFFS.open(dirName);
-        if (!root || !root.isDirectory()) {
-            res += "\n";
-            return res;
-        }
-
-        File file = root.openNextFile();
-        while (file) {
-            if (!file.isDirectory()) {
-                res += file.name();
-                res += ' ';
-                res += file.size();
-                res += '\n';
-            }
-            file = root.openNextFile();
-        }
-
-        if (res.length() == 0) {
-            res += "\n";
-        }
-
-        return res;
-    }
-
-    void streamOpen(String fileName) {
-        streamClose();
-        streamFile = open(fileName);
-        if (!streamFile) debugln("ERROR: No stream file open");
-    }
-
-    void streamWrite(const char* buf, size_t len) {
-        if (streamFile) streamFile.write((uint8_t*)buf, len);
-        else debugln("ERROR: No stream file open");
-    }
-
-    size_t streamRead(char* buf, size_t len) {
-        if (streamFile) {
-            size_t i;
-
-            for (i = 0; i<len; ++i) {
-                if (!streamFile.available() || (i == len-1)) {
-                    buf[i] = '\0';
-                    break;
-                } else {
-                    buf[i] = streamFile.read();
-                }
-            }
-
-            return i;
-        } else {
-            debugln("ERROR: No stream file open");
-            return 0;
-        }
-    }
-
-    size_t streamReadUntil(char* buf, char delimiter, size_t max_len) {
-        if (streamFile) {
-            size_t i;
-            char   c = 'x';
-
-            for (i = 0; i<max_len; ++i) {
-                if ((c == delimiter) || !streamFile.available() || (i == max_len-1)) {
-                    buf[i] = '\0';
-                    break;
-                } else {
-                    c      = streamFile.read();
-                    buf[i] = c;
-                }
-            }
-
-            return i;
-        } else {
-            debugln("ERROR: No stream file open");
-            return 0;
-        }
-    }
-
-    void streamClose() {
-        if (streamFile) streamFile.close();
-    }
-
-    bool streaming() {
-        return (bool)streamFile;
-    }
-
-    size_t streamAvailable() {
-        if (!streamFile) return 0;
-        return streamFile.available();
+    } else {
+        Serial.println("LittleFS mounted");
     }
 }
+
+void format() {
+    LITTLEFS.format();
+}
+
+size_t size() {
+    return LITTLEFS.totalBytes();
+}
+
+size_t usedBytes() {
+    return LITTLEFS.usedBytes();
+}
+
+size_t freeBytes() {
+    return LITTLEFS.totalBytes() - LITTLEFS.usedBytes();
+}
+
+size_t size(const String &fileName) {
+    if (!LITTLEFS.exists(fileName)) return 0;
+    File f = LITTLEFS.open(fileName, FILE_READ);
+    if (!f) return 0;
+    size_t s = f.size();
+    f.close();
+    return s;
+}
+
+bool exists(const String &fileName) {
+    return LITTLEFS.exists(fileName);
+}
+
+fs::File open(const String &fileName, const char *mode = "a+") {
+    if (strcmp(mode, "r") == 0) return LITTLEFS.open(fileName, FILE_READ);
+    if (strchr(mode, 'w')) return LITTLEFS.open(fileName, FILE_WRITE);
+    // fallback: open for append/create
+    return LITTLEFS.open(fileName, FILE_APPEND);
+}
+
+void create(const String &fileName) {
+    File f = LITTLEFS.open(fileName, FILE_WRITE);
+    if (f) f.close();
+}
+
+void remove(const String &fileName) {
+    LITTLEFS.remove(fileName);
+}
+
+void rename(const String &oldName, const String &newName) {
+    LITTLEFS.rename(oldName, newName);
+}
+
+String listDir(const String &dirName = "/") {
+    String out;
+    File root = LITTLEFS.open(dirName);
+    if (!root) return out;
+    if (!root.isDirectory()) {
+        root.close();
+        return out;
+    }
+    File file = root.openNextFile();
+    while (file) {
+        out += String(file.name()) + "," + String(file.size()) + "\n";
+        file = root.openNextFile();
+    }
+    root.close();
+    return out;
+}
+
+} // namespace spiffs
