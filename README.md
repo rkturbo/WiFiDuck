@@ -1,7 +1,7 @@
 # WiFi Duck
 <p align="center">
   <h1>DO NOT USE THIS BRANCH</h1>
-<h1>ESP32-S# MIGRATION, PROBABLY BROKEN</h1>
+<h1>ESP32-S3 MIGRATION, PROBABLY BROKEN</h1>
 <h3> There is plenty of junk and AI code </h3>
 <h3> I'm really not good at this sort of thing </h3>
 <img alt="WiFi Duck Logo" src="img/thumbnail.jpg" width="640">
